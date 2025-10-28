@@ -1,0 +1,28 @@
+/* CORRECT ORDER: All @import statements must be first */
+@import 'swiper/css';
+@import 'swiper/css/pagination';
+
+/* Tailwind Directives MUST come after all @import statements */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* OPTIONAL: Custom styles and component overrides come last */
+.swiper-pagination-bullet-active {
+    background-color: #4f46e5 !important; /* Indigo-600 */
+}
+.swiper-pagination-bullet {
+    width: 10px !important;
+    height: 10px !important;
+    background-color: #a0aec0 !important; /* Gray-400 */
+    opacity: 1 !important;
+}
+/* globals.css or main style sheet */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
