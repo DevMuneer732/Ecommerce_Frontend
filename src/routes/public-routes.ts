@@ -8,6 +8,8 @@ import { TrackOrder } from '../pages/track-order.tsx';
 import { Register } from '../pages/register.tsx';
 import login from '../pages/login.tsx';
 import { ForgotPassword } from '../pages/forgot-password.tsx';
+import { Shop } from '../pages/shop.tsx';
+import { ProductDetail } from '../pages/productDetail.tsx';
 
 
 export const publicRoutes: TRoute[] = [
@@ -41,6 +43,19 @@ export const publicRoutes: TRoute[] = [
     component: Collection,
     exact: true,
   },
+  {
+    name: 'ProductDetail',
+    path: routePaths.ProductDetail,
+    component: ProductDetail,
+    exact: true,
+  },
+  {
+    name: 'Shop',
+    path: routePaths.Shop,
+    component: Shop,
+    exact: true,
+  },
+
   {
     name: 'Cart',
     path: routePaths.Cart,

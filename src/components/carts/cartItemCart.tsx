@@ -1,83 +1,104 @@
-// src/components/carts/CartItemCard.tsx
-
 import React from 'react';
+import { Minus, Plus, X } from 'lucide-react';
+import { useCartStore } from '../../store/useCartStore'; // Import the store
 
 interface CartItemCardProps {
+    variantId: string; 
     imageUrl: string;
     title: string;
     price: number;
-    color: string;
-    size: string;
+    selectedSize: string;
     quantity: number;
-    // Assume productId or cartItemId is needed for real app logic
+    stock: number;
 }
 
-export const CartItemCard: React.FC<CartItemCardProps> = ({
+export const CartItemCart: React.FC<CartItemCardProps> = ({
+    variantId,
     imageUrl,
     title,
     price,
-    color,
-    size,
+    selectedSize,
     quantity,
+    stock,
 }) => {
+    
+    const updateQuantity = useCartStore(state => state.updateQuantity);
+    const removeItem = useCartStore(state => state.removeItem);
+
     // Helper to format currency
     const formatPrice = (p: number) => `$${p.toFixed(2)}`;
 
-    // State/handlers for quantity control would go here in a real app
-    const handleQuantityChange = (newQuantity: number) => {
-        // console.log("New quantity:", newQuantity);
+    const handleQuantityChange = (delta: number) => {
+        const newQuantity = quantity + delta;
+        updateQuantity(variantId, newQuantity);
     };
 
+    const handleRemoveItem = () => {
+        removeItem(variantId);
+        console.log(`Item ${variantId} removed from cart.`);
+    };
+    
+    const isMaxQuantity = quantity >= stock;
+    const isMinQuantity = quantity <= 1;
+
     return (
-        <div className="flex items-start p-4 bg-white rounded-lg shadow-sm border border-gray-100 mb-4">
+        <div className="flex items-start p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300 border border-gray-100 mb-4">
 
             {/* 1. Image */}
             <img
                 src={imageUrl}
                 alt={title}
-                className="w-24 h-24 object-cover rounded-md mr-4 flex-shrink-0"
+                className="w-24 h-24 object-cover rounded-lg mr-4 flex-shrink-0 border border-gray-100"
             />
 
             {/* 2. Details & Controls (Left Column) */}
             <div className="flex flex-col flex-grow">
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{title}</h3>
 
-                <p className="text-md font-bold text-gray-700">{formatPrice(price)}</p>
-
+                {/* UPDATED: Removed color display */}
                 <p className="text-sm text-gray-500 mt-1">
-                    Color: {color}, Size: {size}
+                    Size: <span className="font-medium text-gray-700">{selectedSize}</span>
                 </p>
-
+                
+                {/* Remove Button */}
                 <button
-                    className="text-sm text-red-600 hover:text-red-700 mt-1 self-start transition-colors"
-                    onClick={() => console.log('Remove item')}
+                    className="text-sm text-red-600 hover:text-red-700 mt-2 self-start transition-colors flex items-center space-x-1 font-medium"
+                    onClick={handleRemoveItem}
                 >
-                    Remove
+                    <X size={14} /> <span>Remove</span>
                 </button>
+
+                {/* Stock Warning */}
+                {quantity === stock && (
+                    <p className="text-xs text-orange-500 font-medium mt-1">Max available stock reached!</p>
+                )}
             </div>
 
             {/* 3. Quantity Controls (Middle Column) */}
-            <div className="flex items-center space-x-2 mr-6 flex-shrink-0">
+            <div className="flex items-center border border-gray-300 rounded-lg mr-6 flex-shrink-0 mt-2">
                 <button
-                    className="p-1 border border-gray-300 rounded-full text-gray-600 hover:bg-gray-100 transition"
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={quantity <= 1}
+                    className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-l-lg transition disabled:opacity-30"
+                    onClick={() => handleQuantityChange(-1)}
+                    disabled={isMinQuantity}
+                    aria-label="Decrease quantity"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>
+                    <Minus size={18} />
                 </button>
 
-                <span className="w-6 text-center text-lg font-medium text-gray-900">{quantity}</span>
+                <span className="w-8 text-center text-md font-medium text-gray-900">{quantity}</span>
 
                 <button
-                    className="p-1 border border-gray-300 rounded-full text-gray-600 hover:bg-gray-100 transition"
-                    onClick={() => handleQuantityChange(quantity + 1)}
+                    className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-r-lg transition disabled:opacity-30"
+                    onClick={() => handleQuantityChange(1)}
+                    disabled={isMaxQuantity}
+                    aria-label="Increase quantity"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                    <Plus size={18} />
                 </button>
             </div>
 
             {/* 4. Total Price (Right Column) */}
-            <div className="text-lg font-bold text-gray-900 flex-shrink-0">
+            <div className="text-xl font-extrabold text-gray-900 flex-shrink-0 self-center">
                 {formatPrice(price * quantity)}
             </div>
         </div>

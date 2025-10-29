@@ -1,83 +1,80 @@
-// src/components/carts/CartSection.tsx
-
 import React from 'react';
-import { CartItemCard } from './cartItemCart';
+import { useCartStore } from '../../store/useCartStore'; 
+import { CartItemCart } from './cartItemCart';
 
-// Dummy data mirroring the reference image
-const DUMMY_CART_ITEMS = [
-    {
-        id: 1,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Classic Crewneck T-Shirt",
-        price: 29.99,
-        color: "Black",
-        size: "M",
-        quantity: 1,
-    },
-    {
-        id: 2,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Minimalist White Sneakers",
-        price: 159.99,
-        color: "White",
-        size: "9",
-        quantity: 1,
-    },
-    {
-        id: 3,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Slim Fit Denim Jeans",
-        price: 89.50,
-        color: "Vintage Blue",
-        size: "32",
-        quantity: 1,
-    },
-    {
-        id: 4,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Slim Fit Denim Jeans",
-        price: 89.50,
-        color: "Vintage Blue",
-        size: "32",
-        quantity: 1,
-    },
-    {
-        id: 5,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Slim Fit Denim Jeans",
-        price: 89.50,
-        color: "Vintage Blue",
-        size: "32",
-        quantity: 1,
-    },
-    {
-        id: 6,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-        title: "Slim Fit Denim Jeans",
-        price: 89.50,
-        color: "Vintage Blue",
-        size: "32",
-        quantity: 1,
-    },
-
-];
-
-const totalItems= DUMMY_CART_ITEMS.length
 export const CartSection: React.FC = () => {
+    // Fetch items from the global store
+    const cartItems = useCartStore(state => state.items);
+    const totalItems = cartItems.length;
+
+    // --- Fallback Dummy Data (for initial testing if store is empty) ---
+    if (totalItems === 0) {
+        // Fallback to a single dummy item for visualization
+        const DUMMY_FALLBACK = [{
+            variantId: "0-White-L",
+            id: 0,
+            imageUrl: "https://placehold.co/100x100/F0F4F8/333333?text=Placeholder",
+            title: "Demo Product (Add Real Items)",
+            price: 50.00,
+            selectedSize: "L", // No selectedColor
+            quantity: 1,
+            stock: 10,
+        }];
+
+        return (
+            <div className="w-full lg:w-[65%] p-6 lg:p-0">
+                <div className="flex justify-between items-baseline mb-6">
+                    <p className="text-4xl font-extrabold text-gray-900">Your Shopping Cart (0)</p>
+                </div>
+                <div className="text-center p-10 bg-white rounded-xl shadow-lg">
+                    <p className="text-xl font-medium text-gray-600">Your cart is empty!</p>
+                    <p className="text-sm text-gray-500 mt-2">Add items from the product page to see them here.</p>
+                </div>
+
+                {/* Show dummy data if cart is empty for initial layout demo */}
+                <h3 className="mt-8 text-lg font-semibold text-gray-700 border-t pt-4">Example Item Layout:</h3>
+                <div className="max-h-[70vh] overflow-y-auto scrollbar-hide mt-4">
+                    {DUMMY_FALLBACK.map(item => (
+                        <CartItemCart
+                            key={item.variantId}
+                            imageUrl={item.imageUrl}
+                            title={item.title}
+                            price={item.price}
+                            selectedSize={item.selectedSize} // No selectedColor
+                            quantity={item.quantity}
+                            stock={item.stock}
+                            variantId={item.variantId}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    // --- End Fallback ---
+
+
+    // Render actual cart items
     return (
-        // Added max-h-[70vh] (adjust value as needed), overflow-y-auto, and scrollbar-hide
         <div className="w-full lg:w-[65%] p-6 lg:p-0">
-            
+
             {/* Header */}
             <div className="flex justify-between items-baseline mb-6">
-                <p className="text-4xl font-extrabold text-gray-900">Your Shopping Cart({totalItems})</p>
+                <p className="text-4xl font-extrabold text-gray-900">Your Shopping Cart ({totalItems})</p>
             </div>
 
             {/* Item List Container with Scrolling */}
             <div className="max-h-[70vh] overflow-y-auto scrollbar-hide">
-                {DUMMY_CART_ITEMS.map(item => (
-                    // Note: Ensure CartItemCard component doesn't introduce padding/margins that affect scroll
-                    <CartItemCard key={item.id} {...item} />
+                {cartItems.map(item => (
+                    <CartItemCart
+                        key={item.variantId}
+                        imageUrl={item.imageUrl}
+                        title={item.title}
+                        price={item.price}
+                        selectedSize={item.selectedSize} // No selectedColor
+                        quantity={item.quantity}
+                        stock={item.stock}
+                        variantId={item.variantId}
+                    />
                 ))}
             </div>
         </div>

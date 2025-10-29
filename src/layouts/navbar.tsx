@@ -5,13 +5,26 @@ import { useThemeChooser } from '../contexts/theme-chooser';
 import { ThemeChooser } from '../components/shared/theme-chooser';
 import { useNavigate } from 'react-router-dom';
 
+// Import both stores
+import { useCartStore } from '../store/useCartStore';
+import { useWishlistStore } from '../store/useWishListStore';
+
+
 const Navbar: React.FC = () => {
   const { toggle } = useThemeChooser();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount] = useState<number>(3);
-  const [wishlistCount] = useState<number>(5);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+
+  // --- Zustand Store Integration ---
+  // 1. Select the total number of unique items (not total quantity) from the cart store
+  const cartCount = useCartStore(state => state.items.length);
+  
+  // 2. Select the total number of items from the wishlist store
+  const wishlistCount = useWishlistStore(state => state.wishlistIds.length);
+  
+  // 3. REMOVED: The old hardcoded useState lines for cartCount and wishlistCount
+  // ---------------------------------
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -45,20 +58,6 @@ const Navbar: React.FC = () => {
               Collections
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
             </a>
-            {/* <a
-              href="#new"
-              className="text-sm font-medium text-gray-700 hover:text-amber-600 transition-colors relative group"
-            >
-              New Arrivals
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
-            </a> */}
-            {/* <a
-              href="#sale"
-              className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors relative group"
-            >
-              Sale
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-red-600 group-hover:w-full transition-all duration-300"></span>
-            </a> */}
           </div>
 
           {/* Search Bar (Desktop) */}
@@ -95,17 +94,19 @@ const Navbar: React.FC = () => {
             <button
               className="hidden sm:block text-gray-700 hover:text-amber-600 transition-colors"
               aria-label="User account"
+              onClick={() => navigate('/login')} // Added navigation to login
             >
               <User className="w-5 h-5" />
             </button>
 
-            {/* Wishlist Icon */}
+            {/* Wishlist Icon (Now dynamic) */}
             <button
               className="hidden sm:block relative text-gray-700 hover:text-amber-600 transition-colors"
               aria-label="Wishlist"
               onClick={() => navigate('/wish')}
             >
               <Heart className="w-5 h-5" />
+              {/* Renders badge only if count > 0 */}
               {wishlistCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center">
                   {wishlistCount}
@@ -113,13 +114,14 @@ const Navbar: React.FC = () => {
               )}
             </button>
 
-            {/* Cart Icon */}
+            {/* Cart Icon (Now dynamic) */}
             <button
               className="relative text-gray-700 hover:text-amber-600 transition-colors"
               aria-label="Shopping cart"
               onClick={() => navigate('/cart')}
             >
               <ShoppingCart className="w-5 h-5" />
+              {/* Renders badge only if count > 0 */}
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-amber-600 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center">
                   {cartCount}
@@ -158,42 +160,34 @@ const Navbar: React.FC = () => {
         <div className="md:hidden border-t border-gray-200 bg-white">
           <div className="px-4 py-4 space-y-3">
             <a
-              href="#shop"
+              href="/shop"
               className="block text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
             >
               Shop Now
             </a>
             <a
-              href="#collections"
+              href="/collection"
               className="block text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
             >
               Collections
             </a>
-            <a
-              href="#new"
-              className="block text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
-            >
-              New Arrivals
-            </a>
-            <a
-              href="#sale"
-              className="block text-base font-medium text-red-600 hover:text-red-700 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
-            >
-              Sale
-            </a>
+            {/* ... other mobile links ... */}
             <div className="border-t border-gray-200 pt-3 space-y-3">
               <a
-                href="#account"
+                href="/login" // Use href for standard link
                 className="flex items-center text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
+                onClick={(e) => { e.preventDefault(); navigate('/login'); setMobileMenuOpen(false); }}
               >
                 <User className="w-5 h-5 mr-2" />
                 My Account
               </a>
               <a
-                href="#wishlist"
+                href="/wish" // Use href for standard link
                 className="flex items-center text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
+                onClick={(e) => { e.preventDefault(); navigate('/wish'); setMobileMenuOpen(false); }}
               >
                 <Heart className="w-5 h-5 mr-2" />
+                {/* Dynamic count in mobile menu */}
                 Wishlist ({wishlistCount})
               </a>
             </div>

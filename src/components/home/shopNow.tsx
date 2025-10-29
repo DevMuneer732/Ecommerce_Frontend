@@ -1,7 +1,7 @@
 // ShopNowSection.tsx
 
 import React from 'react';
-
+import { Navigate, useNavigate } from 'react-router-dom';
 interface ShopNowSectionProps {
     backgroundImageUrl?: string;
 }
@@ -13,7 +13,7 @@ export const ShopNowSection: React.FC<ShopNowSectionProps> = ({
 }) => {
 
     const imageUrl = backgroundImageUrl || DEFAULT_BACKGROUND_IMAGE;
-
+const navigate= useNavigate()
     return (
         <div
             className="relative w-full h-96 flex items-center justify-center text-center text-white p-4"
@@ -37,9 +37,9 @@ export const ShopNowSection: React.FC<ShopNowSectionProps> = ({
 
                 <button
                     className="px-8 py-3 bg-white text-black font-semibold text-lg uppercase rounded-full 
-                 hover:bg-gray-200 transition duration-300 transform hover:scale-105 shadow-lg
-                     focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50"
-                    onClick={() => console.log('Navigating to Shop Page...')}
+                hover:bg-gray-200 transition duration-300 transform hover:scale-105 shadow-lg
+                focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50"
+                    onClick={()=>navigate('/shop')}
                 >
                     Shop Now
                 </button>

@@ -1,3 +1,4 @@
+
 export const routePaths = {
   Home: '/',
   Collection: '/collection',
@@ -6,5 +7,7 @@ export const routePaths = {
   TrackOrder: '/track-order',
   Login: '/login',
   Register: '/register',
-  ForgotPassword:'/forgot-password'
+  ForgotPassword:'/forgot-password',
+  Shop:'/shop',
+  ProductDetail: '/shop/:productId', 
 } as const;

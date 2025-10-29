@@ -2,7 +2,7 @@
 import { HomeFeatures } from "../components/home/homeFeatures";
 import { ShopNowSection } from "../components/home/shopNow";
 import { Testimonials } from "../components/home/Testimonials/testimonials";
-import { ProductList } from "../components/products/productList";
+import { TrendingProductList } from "../components/products/TrendingProductList";
 
 export const Home = () => {
   return (
@@ -31,7 +31,7 @@ export const Home = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Trending Products
         </h1>
-        <ProductList />
+        <TrendingProductList />
       </div>
 
       <div>
