@@ -2,8 +2,8 @@ import React from 'react';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { Heart } from 'lucide-react';
 // Assuming the store path is correct based on your structure
-import { useWishlistStore } from '../../store/useWishListStore';
 import { useProductStore } from '../../store/useProductStore'; // Correct import
+import { useWishlistStore } from '../../store/useWishlistStore';
 
 interface ProductCardProps {
     productId: number;
@@ -49,7 +49,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const fetchSingleProduct = useProductStore(state => state.fetchSingleProduct);
 
     const handleWishlistClick = (e: React.MouseEvent) => {
-        // CRITICAL FIX: Stop event propagation/default behavior 
         e.preventDefault();
         e.stopPropagation();
 

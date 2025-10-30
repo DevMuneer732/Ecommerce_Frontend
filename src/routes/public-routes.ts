@@ -10,6 +10,7 @@ import login from '../pages/login.tsx';
 import { ForgotPassword } from '../pages/forgot-password.tsx';
 import { Shop } from '../pages/shop.tsx';
 import { ProductDetail } from '../pages/productDetail.tsx';
+import { CheckOut } from '../pages/checkOut.tsx';
 
 
 export const publicRoutes: TRoute[] = [
@@ -47,6 +48,12 @@ export const publicRoutes: TRoute[] = [
     name: 'ProductDetail',
     path: routePaths.ProductDetail,
     component: ProductDetail,
+    exact: true,
+  },
+  {
+    name: 'CheckOut',
+    path: routePaths.CheckOut,
+    component: CheckOut,
     exact: true,
   },
   {

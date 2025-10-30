@@ -1,114 +1,134 @@
 import { create } from 'zustand';
 
 // --- Types ---
-
-// Defines a unique cart item instance (product + selected variants)
-interface CartItem {
+export interface CartItem {
     id: number; // Product ID
-    variantId: string; 
+    variantId: string;
     title: string;
     price: number;
     selectedSize: string;
-    imageUrl: string; 
+    imageUrl: string;
     quantity: number;
-    stock: number; 
+    stock: number;
 }
 
 // Defines the shape of the entire cart and totals state
 interface CartState {
     items: CartItem[];
+    buyNowItem: CartItem | null;
     couponCode: string | null;
     discountAmount: number;
     isCouponValid: boolean;
     subtotal: number;
     orderTotal: number;
     shipping: number;
-    taxRate: number; // Assuming a fixed tax rate for calculation
+    taxRate: number;
 }
 
 // Defines the actions available in the store
 interface CartActions {
-    // UPDATED: addItem payload now includes selectedColor and imageUrl
     addItem: (item: Omit<CartItem, 'variantId'>) => void;
     updateQuantity: (variantId: string, quantity: number) => void;
-    removeItem: (variantId: string,) => void;
+    removeItem: (variantId: string) => void;
     applyCoupon: (code: string) => Promise<void>;
     clearCart: () => void;
+    calculateTotals: () => void;
 }
 
+
 // --- Combined State and Actions ---
+interface CartActions {
+    addItem: (item: Omit<CartItem, 'variantId'>) => void;
+    updateQuantity: (variantId: string, quantity: number) => void;
+    removeItem: (variantId: string) => void;
+    applyCoupon: (code: string) => Promise<void>;
+    clearCart: () => void;
+    calculateTotals: () => void;
+    setBuyNowItem: (item: Omit<CartItem, 'variantId'> | null) => void;
+}
 
 export const useCartStore = create<CartState & CartActions>((set, get) => ({
     // State
     items: [],
+    buyNowItem: null,
     couponCode: null,
     discountAmount: 0,
     isCouponValid: false,
-    taxRate: 0.08, // 8% tax rate
+    taxRate: 0.08,
 
-    // Computed Values
-    get subtotal() {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    },
-    get shipping() {
-        return get().subtotal >= 100 ? 0.00 : 5.00; // Free shipping over $100
-    },
-    get orderTotal() {
-        const sub = get().subtotal;
-        const tax = sub * get().taxRate;
-        const ship = get().shipping;
-        const totalBeforeDiscount = sub + tax + ship;
-        return Math.max(0, totalBeforeDiscount - get().discountAmount);
+    // State values for totals
+    subtotal: 0,
+    shipping: 0,
+    orderTotal: 0,
+
+    // Calculate totals whenever items or buyNowItem changes
+    calculateTotals: () => {
+        set(state => {
+            // Use buyNowItem if present, otherwise use cart items
+            const activeItems = state.buyNowItem ? [state.buyNowItem] : state.items;
+            
+            // Calculate subtotal from the active items
+            const subtotal = activeItems.reduce((total, item) => 
+                total + (item.price * item.quantity), 0
+            );
+            
+            // Apply standard shipping rules
+            const shipping = subtotal >= 100 ? 0.00 : 5.00;
+            
+            // Calculate tax and final total
+            const tax = subtotal * state.taxRate;
+            const totalBeforeDiscount = subtotal + tax + shipping;
+            const orderTotal = Math.max(0, totalBeforeDiscount - state.discountAmount);
+            
+            return {
+                subtotal,
+                shipping,
+                orderTotal
+            };
+        });
     },
 
     // Actions
     addItem: (item) => {
-        // Generate a unique ID based on product ID AND variants (Goal 5 implementation)
         const variantId = `${item.id}-${item.selectedSize}`;
-
         set((state) => {
             const existingItem = state.items.find(i => i.variantId === variantId);
-
             if (existingItem) {
-                // If duplicate product/attributes, increment quantity (Goal 5)
                 const newQuantity = existingItem.quantity + item.quantity;
                 if (newQuantity > existingItem.stock) {
-                    console.error("Stock check failed: Cannot add more than available stock.");
+                    console.error("Stock check failed.");
                     return state;
                 }
-
-                return {
+                const newState = {
                     items: state.items.map(i =>
                         i.variantId === variantId
                             ? { ...i, quantity: newQuantity }
                             : i
                     ),
                 };
+                return newState;
             } else {
-                // Check stock for new item
                 if (item.quantity > item.stock) {
-                    console.error("Stock check failed: Initial quantity exceeds stock.");
+                    console.error("Stock check failed.");
                     return state;
                 }
-
-                // Add new item
                 const newItem: CartItem = { ...item, variantId };
-                return { items: [...state.items, newItem] };
+                const newState = { items: [...state.items, newItem] };
+                return newState;
             }
         });
+        get().calculateTotals();
     },
 
     updateQuantity: (variantId, quantity) => {
         set((state) => {
             const item = state.items.find(i => i.variantId === variantId);
             if (!item) return state;
-
             const newQuantity = Math.max(1, quantity);
             if (newQuantity > item.stock) {
-                console.error("Stock check failed: Quantity update exceeds stock. (Goal 8)");
+                console.error("Stock check failed.");
                 return state;
             }
-
             return {
                 items: state.items.map(i =>
                     i.variantId === variantId
@@ -117,26 +137,28 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
                 ),
             };
         });
+        get().calculateTotals();
     },
 
     removeItem: (variantId) => {
         set((state) => ({
             items: state.items.filter(i => i.variantId !== variantId),
         }));
+        get().calculateTotals();
     },
 
     applyCoupon: async (code) => {
-        // ... (Coupon logic remains the same) ...
         console.log(`Simulating API check for coupon: ${code}`);
         await new Promise(resolve => setTimeout(resolve, 1000));
+
         const subtotal = get().subtotal;
         let discount = 0;
         let isValid = false;
 
-        if (code.toUpperCase() === 'SAVE15') {
+        if (code.toUpperCase() === 'SAVE15') { // 15% off
             discount = subtotal * 0.15;
             isValid = true;
-        } else if (code.toUpperCase() === 'FLAT20') {
+        } else if (code.toUpperCase() === 'FLAT20') { // $20 off
             discount = 20;
             isValid = true;
         }
@@ -149,5 +171,57 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
         }
     },
 
-    clearCart: () => set({ items: [], couponCode: null, discountAmount: 0, isCouponValid: false }),
+    clearCart: () => {
+        set({
+            items: [],
+            buyNowItem: null,
+            couponCode: null,
+            discountAmount: 0,
+            isCouponValid: false
+        });
+        get().calculateTotals();
+    },
+
+    setBuyNowItem: (item) => {
+        console.log('Setting buy now item in store:', item);
+        
+        if (item) {
+            // Generate variantId for the buy now item
+            const variantId = `${item.id}-${item.selectedSize}`;
+            const buyNowItem = { ...item, variantId };
+            
+            // Immediately calculate the initial totals based on the buy now item
+            const quantity = buyNowItem.quantity || 1;
+            const subtotal = buyNowItem.price * quantity;
+            const shipping = subtotal >= 100 ? 0.00 : 5.00;
+            const tax = subtotal * get().taxRate;
+            const orderTotal = Math.max(0, subtotal + tax + shipping);
+            
+            // Update store with buy now item and calculated totals
+            set({
+                buyNowItem,
+                items: [], // Clear regular cart items when using buy now
+                subtotal,
+                shipping,
+                orderTotal,
+                discountAmount: 0,
+                couponCode: null,
+                isCouponValid: false
+            });
+            
+            console.log('Buy now item set with totals:', {
+                buyNowItem,
+                subtotal,
+                shipping,
+                orderTotal
+            });
+        } else {
+            set(state => ({
+                ...state,
+                buyNowItem: null
+            }));
+            get().calculateTotals();
+        }
+    },
 }));
+

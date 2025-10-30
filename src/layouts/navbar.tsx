@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Import both stores
 import { useCartStore } from '../store/useCartStore';
-import { useWishlistStore } from '../store/useWishListStore';
+import { useWishlistStore } from '../store/useWishlistStore';
 
 
 const Navbar: React.FC = () => {
@@ -22,9 +22,6 @@ const Navbar: React.FC = () => {
   
   // 2. Select the total number of items from the wishlist store
   const wishlistCount = useWishlistStore(state => state.wishlistIds.length);
-  
-  // 3. REMOVED: The old hardcoded useState lines for cartCount and wishlistCount
-  // ---------------------------------
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">

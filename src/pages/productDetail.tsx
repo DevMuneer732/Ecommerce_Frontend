@@ -12,7 +12,6 @@ export const ProductDetail: React.FC = () => {
     // The key 'productId' MUST match the parameter name in your route definition (e.g., path: '/shop/:productId')
 
     const { productId } = useParams<{ productId: string }>();
-    console.log("productId", productId);
 
     // --- Select state and actions from the Product Store ---
     const {

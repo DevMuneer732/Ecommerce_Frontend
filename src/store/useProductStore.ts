@@ -1,19 +1,31 @@
 import { create } from 'zustand';
 
 // --- Shared Product and Filter Interfaces ---
+
+interface Review {
+    rating: number;
+    comment: string;
+    date: string;
+    reviewerName: string;
+}
+
 // Ensure Product interface includes all needed fields for ProductCard
 interface Product {
     id: number;
     title: string;
-    description: string; // Keep even if not used in card, for consistency
+    description: string;
     price: number;
     comparePrice?: number;
     rating: number;
     reviewCount: number;
     stock: number;
-    availableSizes: string[]; // Keep for consistency
+    availableColors: string[];
+    availableSizes: string[];
     imageUrls: string[];
-    category?: string; // Add category property to products for filtering
+    category?: string;
+    shippingInformation: string;
+    returnPolicy: string;
+    reviews: Review[];
 }
 
 interface ProductFilter {
@@ -43,15 +55,31 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         id: 101,
         title: 'Running Shoe Pro',
         price: 99.99,
-        imageUrls: ["https://placehold.co/600x600/purple/white?text=Shoe+1","https://placehold.co/600x600/blue/white?text=Shoe+2","https://placehold.co/600x600/yellow/black?text=Shoe+3","https://placehold.co/600x600/orange/white?text=Shoe+2"],
+        imageUrls: ["https://placehold.co/600x600/purple/white?text=Shoe+1", "https://placehold.co/600x600/blue/white?text=Shoe+2", "https://placehold.co/600x600/yellow/black?text=Shoe+3", "https://placehold.co/600x600/orange/white?text=Shoe+2"],
         rating: 4.5,
         reviewCount: 154,
         stock: 8,
         category: 'Footwear',
-        availableSizes: ["M","XL"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        availableColors: ['Black', 'White'], // Added available colors
+        availableSizes: ["M", "XL"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 15 Days",
+        returnPolicy: "30 Days Return Policy",
+        reviews: [
+            {
+                "rating": 2,
+                "comment": "Very unhappy with my purchase!",
+                "date": "2024-05-23T08:56:21.618Z",
+                "reviewerName": "John Doe",
+            },
+            {
+                "rating": 5,
+                "comment": "Very satisfied!",
+                "date": "2024-05-23T08:56:21.618Z",
+                "reviewerName": "Scarlett Wright",
+            }
+        ],
     },
-
     {
         id: 102,
         title: 'Hush Puppies',
@@ -61,10 +89,13 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         reviewCount: 310,
         stock: 20,
         category: 'Footwear',
-        availableSizes: [],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        availableColors: ['Red', 'Blue'], // Added available colors
+        availableSizes: ["S", "L"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 10 Days",
+        returnPolicy: "No Returns",
+        reviews: [],
     },
-    // Out of stock
     {
         id: 103,
         title: "Minimalist Smart Watch",
@@ -74,11 +105,14 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         reviewCount: 450,
         stock: 10,
         category: 'Accessories',
-        imageUrls:["https://placehold.co/600x600/purple/white?text=Shoe+1","https://placehold.co/600x600/blue/white?text=Shoe+2","https://placehold.co/600x600/yellow/black?text=Shoe+3","https://placehold.co/600x600/orange/white?text=Shoe+2"],
-        availableSizes: ["M","XL"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        imageUrls: ["https://placehold.co/600x600/purple/white?text=Shoe+1", "https://placehold.co/600x600/blue/white?text=Shoe+2"],
+        availableColors: ['Silver', 'Black'],
+        availableSizes: ["M", "XL"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 5 Days",
+        returnPolicy: "30 Days Return Policy",
+        reviews: [],
     },
-
     {
         id: 104,
         title: "Noise-Cancelling Headphones",
@@ -88,10 +122,13 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         stock: 22,
         category: 'Electronics',
         imageUrls: ["https://placehold.co/600x600/333333/FFFFFF?text=Headphones"],
-        availableSizes: [],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        availableColors: ['Black'],
+        availableSizes: ["One Size"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 3 Days",
+        returnPolicy: "30 Days Return Policy",
+        reviews: [],
     },
-
     {
         id: 105,
         title: "Premium Heritage Leather Backpack",
@@ -102,10 +139,13 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         stock: 12,
         category: 'Accessories',
         imageUrls: ["https://placehold.co/600x600/1e293b/FFFFFF?text=Backpack"],
-        availableSizes: [],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        availableColors: ['Brown'],
+        availableSizes: ["One Size"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 7 Days",
+        returnPolicy: "14 Days Return Policy",
+        reviews: [],
     },
-
     {
         id: 106,
         title: "Tommy Watch",
@@ -115,8 +155,12 @@ const DUMMY_PRODUCT_CATALOG: Product[] = [
         stock: 50,
         category: 'Apparel',
         imageUrls: ["https://placehold.co/600x600/64D2FF/FFFFFF?text=T-Shirt"],
-        availableSizes: [],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula."
+        availableColors: ['Blue', 'White'],
+        availableSizes: ["S", "M", "L", "XL"],
+        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
+        shippingInformation: "Ships in 2 Days",
+        returnPolicy: "30 Days Return Policy",
+        reviews: [],
     },
 ];
 // --- End Mock Data Source ---
@@ -130,7 +174,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         minPrice: 0,
         maxPrice: 300,
         sortBy: 'relevance',
-        inStockOnly: false, 
+        inStockOnly: false,
     },
     isLoading: false,
     error: null,
@@ -139,13 +183,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         const mergedFilters = { ...get().filters, ...newFilters };
-        // Update the global filter state immediately
         set({ filters: mergedFilters });
 
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         try {
-            // --- FILTERING LOGIC ---
             let filteredCatalog = DUMMY_PRODUCT_CATALOG;
 
             // 1. Filter by Category
@@ -155,7 +197,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 );
             }
 
-            // 2. Filter by Price Range (using maxPrice from local UI state via mergedFilters)
+            // 2. Filter by Price Range
             if (mergedFilters.maxPrice !== undefined) {
                 filteredCatalog = filteredCatalog.filter(p => p.price <= mergedFilters.maxPrice!);
             }
@@ -173,7 +215,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
             } else if (mergedFilters.sortBy === 'rating') {
                 filteredCatalog.sort((a, b) => b.rating - a.rating);
             }
-            // --- END FILTERING LOGIC ---
 
             set({
                 catalog: filteredCatalog,
@@ -185,7 +226,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     },
 
     fetchSingleProduct: async (id: number) => {
-        // ... (keep previous implementation) ...
         set({ isLoading: true, error: null, selectedProduct: null });
         await new Promise(resolve => setTimeout(resolve, 600));
         try {
@@ -201,10 +241,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
     },
 
     setFilters: (newFilters) => {
-        // This action now triggers the fetchProducts effect via ShopPage's useEffect
         set((state) => ({
             filters: { ...state.filters, ...newFilters },
         }));
     },
 }));
-

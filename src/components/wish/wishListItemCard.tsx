@@ -2,7 +2,7 @@ import React from 'react';
 import { ShoppingCart, Trash } from 'lucide-react';
 // Import the stores for actions
 import { useCartStore } from '../../store/useCartStore';
-import { useWishlistStore } from '../../store/useWishListStore';
+import { useWishlistStore } from '../../store/useWishlistStore';
 
 // This interface must match the object being passed from Wishlist.tsx
 interface WishlistItemCardProps {
@@ -14,7 +14,6 @@ interface WishlistItemCardProps {
         available: boolean;
         stock: number;
         availableSizes: string[];
-        // Add other fields if needed, e.g., for 'Add to Cart'
     };
 }
 

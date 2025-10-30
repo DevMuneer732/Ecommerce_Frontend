@@ -10,7 +10,6 @@ interface WishlistState {
 }
 
 export const useWishlistStore = create<WishlistState>((set, get) => ({
-    // Initial state: Using dummy IDs for demonstration
     wishlistIds: [],
 
     // Derived state function: Checks for existence
