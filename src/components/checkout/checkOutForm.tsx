@@ -1,40 +1,28 @@
 import React from 'react';
-import { useFormik } from 'formik';
+import { FormikProps } from 'formik'; // Import FormikProps
 import { User, Home, Phone, Mail } from 'lucide-react';
-import { CheckoutFormValues, checkoutValidationSchema } from '../../validation/checkoutSchema';
+import { CheckoutPageValues } from '../../pages/checkOut';
 
 interface CheckoutFormProps {
-    onSubmit: (values: CheckoutFormValues) => void;
+    // Receives the main Formik instance from the parent
+    formik: FormikProps<CheckoutPageValues>; 
 }
 
-export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit }) => {
+// Helper function for input styling
+const getInputClasses = (formik: FormikProps<CheckoutPageValues>, field: keyof CheckoutPageValues) => {
+    const base = "w-full pl-10 pr-4 py-3 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-150 text-sm";
+    if (formik.touched[field] && formik.errors[field]) {
+        return `${base} border-red-500 focus:border-red-500 focus:ring-red-100`;
+    }
+    return `${base} border-gray-300 focus:border-blue-500 focus:ring-blue-100`;
+};
 
-    const formik = useFormik<CheckoutFormValues>({
-        initialValues: {
-            fullName: '',
-            streetAddress: '',
-            phone: '',
-            email: '',
-        },
-        validationSchema: checkoutValidationSchema,
-        onSubmit: (values) => {
-            onSubmit(values);
-            console.log("personal details of user:", values);
-            
-        },
-    });
-
-    // Helper function for input styling
-    const getInputClasses = (field: keyof CheckoutFormValues) => {
-        const base = "w-full pl-10 pr-4 py-3 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-150 text-sm";
-        if (formik.touched[field] && formik.errors[field]) {
-            return `${base} border-red-500 focus:border-red-500 focus:ring-red-100`;
-        }
-        return `${base} border-gray-300 focus:border-blue-500 focus:ring-blue-100`;
-    };
-
+export const CheckoutForm: React.FC<CheckoutFormProps> = ({ formik }) => {
+    // Formik instance is now controlled by the parent (CheckoutPage)
+    
     return (
-        <form id="checkout-form" onSubmit={formik.handleSubmit} className="space-y-5">
+        // The <form> tag is now in the parent (CheckoutPage)
+        <div className="space-y-5">
             {/* Full Name Field */}
             <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -47,7 +35,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit }) => {
                         type="text"
                         placeholder="Enter your full name"
                         {...formik.getFieldProps('fullName')}
-                        className={getInputClasses('fullName')}
+                        className={getInputClasses(formik, 'fullName')}
                     />
                 </div>
                 {formik.touched.fullName && formik.errors.fullName ? (
@@ -67,7 +55,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit }) => {
                         type="text"
                         placeholder="123 Main Street"
                         {...formik.getFieldProps('streetAddress')}
-                        className={getInputClasses('streetAddress')}
+                        className={getInputClasses(formik, 'streetAddress')}
                     />
                 </div>
                 {formik.touched.streetAddress && formik.errors.streetAddress ? (
@@ -87,7 +75,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit }) => {
                         type="tel"
                         placeholder="(+92) 300-1234567"
                         {...formik.getFieldProps('phone')}
-                        className={getInputClasses('phone')}
+                        className={getInputClasses(formik, 'phone')}
                     />
                 </div>
                 {formik.touched.phone && formik.errors.phone ? (
@@ -107,13 +95,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSubmit }) => {
                         type="email"
                         placeholder="you@example.com"
                         {...formik.getFieldProps('email')}
-                        className={getInputClasses('email')}
+                        className={getInputClasses(formik, 'email')}
                     />
                 </div>
                 {formik.touched.email && formik.errors.email ? (
                     <div className="text-xs text-red-500 mt-1">{formik.errors.email}</div>
                 ) : null}
             </div>
-        </form>
+        </div>
     );
 };

@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-// Define the shape of the checkout form values
+// --- Shipping Details ---
 export interface CheckoutFormValues {
     fullName: string;
     streetAddress: string;
@@ -8,7 +8,6 @@ export interface CheckoutFormValues {
     email?: string; // Optional field
 }
 
-// Define the validation schema
 export const checkoutValidationSchema = yup.object<CheckoutFormValues>().shape({
     fullName: yup
         .string()
@@ -25,5 +24,32 @@ export const checkoutValidationSchema = yup.object<CheckoutFormValues>().shape({
     email: yup
         .string()
         .email('Enter a valid email')
-    // Email is optional, so no .required()
+});
+
+// --- Payment Details ---
+export interface PaymentFormValues {
+    cardHolderName: string;
+    cardNumber: string; // Use string for card numbers
+    expiryDate: string;
+    cvc: string; // Use string for CVC
+}
+
+export const paymentValidationSchema = yup.object<PaymentFormValues>().shape({
+    cardHolderName: yup
+        .string()
+        .min(3, 'A valid name is required')
+        .required('Card Holder Name is required'),
+    cardNumber: yup
+        .string()
+        .matches(/^[0-9]{16}$/, 'Card number must be 16 digits')
+        .required('Card Number is required'),
+    expiryDate: yup
+        .string()
+        // Regex for MM/YY format
+        .matches(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/, 'Must be in MM/YY format (e.g., 05/28)') 
+        .required('Expiry Date is Required'),
+    cvc: yup
+        .string()
+        .matches(/^[0-9]{3,4}$/, 'Must be 3 or 4 digits')
+        .required('CVC Number is required')
 });

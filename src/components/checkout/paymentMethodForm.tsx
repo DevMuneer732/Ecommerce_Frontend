@@ -1,16 +1,19 @@
 import React from 'react';
-import { Banknote, Landmark, CreditCard, Check, Lock,User } from 'lucide-react';
+import { Banknote, Landmark, CreditCard, Check, Lock, User } from 'lucide-react';
+import { FormikProps } from 'formik'; // Import FormikProps
+import { CheckoutPageValues } from '../../pages/checkOut';
 
 // Define the available payment methods
 export type PaymentMethod = 'cod' | 'bank' | 'card';
 
 interface PaymentMethodFormProps {
-    // Props to control the component from the parent (CheckoutPage)
+    // Receive the main Formik instance from the parent
+    formik: FormikProps<CheckoutPageValues>; 
     selectedMethod: PaymentMethod;
     setSelectedMethod: (method: PaymentMethod) => void;
 }
 
-// Helper component for the selection buttons
+// Helper component for the selection buttons (no changes)
 const PaymentOption: React.FC<{
     title: string;
     icon: React.ReactNode;
@@ -33,14 +36,24 @@ const PaymentOption: React.FC<{
     </div>
 );
 
-export const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({ selectedMethod, setSelectedMethod }) => {
+// Helper function for input styling
+const getInputClasses = (formik: FormikProps<CheckoutPageValues>, field: keyof CheckoutPageValues) => {
+    const base = "w-full pl-10 pr-4 py-3 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-150 text-sm";
+    // Check for nested keys if using a different structure (e.g., formik.touched.payment?.cardHolderName)
+    if (formik.touched[field] && formik.errors[field]) {
+        return `${base} border-red-500 focus:border-red-500 focus:ring-red-100`;
+    }
+    return `${base} border-gray-300 focus:border-blue-500 focus:ring-blue-100`;
+};
+
+export const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({ formik, selectedMethod, setSelectedMethod }) => {
     return (
         <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mt-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">
                 2. Payment Method
             </h2>
 
-            {/* Payment Method Selector (As required by documentation) */}
+            {/* Payment Method Selector */}
             <div className="space-y-4">
                 <PaymentOption
                     title="Cash On Delivery (COD)"
@@ -64,57 +77,91 @@ export const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({ selectedMe
 
             {/* --- Conditional Content Based on Selection --- */}
             
-            {/* 1. Cash on Delivery Instructions */}
             {selectedMethod === 'cod' && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-700">
                     You will pay the courier in cash upon delivery of your order.
                 </div>
             )}
 
-            {/* 2. Bank Transfer Instructions */}
             {selectedMethod === 'bank' && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 space-y-2">
-                    <p className="font-semibold">Please transfer the total amount to the following bank account:</p>
+                    <p className="font-semibold">Please transfer the total amount...</p>
                     <p><strong>Bank:</strong> HBL Pakistan</p>
-                    <p><strong>Account Name:</strong> ECOMMERCE PVT LTD</p>
                     <p><strong>IBAN:</strong> PK36 HABB 0012 3456 7890 1234</p>
-                    <p className="text-xs text-red-600">Your order will be shipped after payment confirmation.</p>
                 </div>
             )}
 
-            {/* 3. Credit Card Form (Your original form, now styled) */}
+            {/* 3. Credit Card Form (Now wired to parent Formik) */}
             {selectedMethod === 'card' && (
                 <div className="mt-6 space-y-4 border-t pt-6">
                     <h3 className="text-lg font-semibold text-gray-800">Enter Card Details</h3>
-                    {/* NOTE: This is a DUMMY form. 
-                      In a real app, you would use Stripe Elements or another secure payment gateway.
-                      DO NOT handle raw credit card numbers directly.
-                    */}
+                    
+                    {/* Card Holder Name */}
                     <div>
                         <label htmlFor="cardHolderName" className="block text-sm font-medium text-gray-700 mb-1">Card Holder Name</label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input type="text" id="cardHolderName" placeholder="Full Name on Card" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm" />
+                            <input
+                                id="cardHolderName"
+                                type="text"
+                                placeholder="Full Name on Card"
+                                {...formik.getFieldProps('cardHolderName')}
+                                className={getInputClasses(formik, 'cardHolderName')}
+                            />
                         </div>
+                        {formik.touched.cardHolderName && formik.errors.cardHolderName ? (
+                            <div className="text-xs text-red-500 mt-1">{formik.errors.cardHolderName as string}</div>
+                        ) : null}
                     </div>
+                    
+                    {/* Card Number */}
                     <div>
                         <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
                         <div className="relative">
                             <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm" />
+                            <input
+                                id="cardNumber"
+                                type="text" 
+                                placeholder="1234 5678 9012 3456"
+                                {...formik.getFieldProps('cardNumber')}
+                                className={getInputClasses(formik, 'cardNumber')}
+                            />
                         </div>
+                        {formik.touched.cardNumber && formik.errors.cardNumber ? (
+                            <div className="text-xs text-red-500 mt-1">{formik.errors.cardNumber as string}</div>
+                        ) : null}
                     </div>
+                    
+                    {/* Expiry and CVC */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="expiry" className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                            <input type="text" id="expiry" placeholder="MM / YY" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm" />
+                            <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                            <input
+                                id="expiryDate"
+                                type="text"
+                                placeholder="MM/YY"
+                                {...formik.getFieldProps('expiryDate')}
+                                className={getInputClasses(formik, 'expiryDate').replace('pl-10', 'pl-4')} // Adjust padding
+                            />
+                            {formik.touched.expiryDate && formik.errors.expiryDate ? (
+                                <div className="text-xs text-red-500 mt-1">{formik.errors.expiryDate as string}</div>
+                            ) : null}
                         </div>
                         <div>
                             <label htmlFor="cvc" className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input type="text" id="cvc" placeholder="123" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm" />
+                                <input
+                                    id="cvc"
+                                    type="text"
+                                    placeholder="123"
+                                    {...formik.getFieldProps('cvc')}
+                                    className={getInputClasses(formik, 'cvc')}
+                                />
                             </div>
+                            {formik.touched.cvc && formik.errors.cvc ? (
+                                <div className="text-xs text-red-500 mt-1">{formik.errors.cvc as string}</div>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -122,4 +169,3 @@ export const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({ selectedMe
         </div>
     );
 };
-

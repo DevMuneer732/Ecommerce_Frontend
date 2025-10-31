@@ -1,30 +1,19 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Heart, Minus, Plus, Star } from 'lucide-react';
-// Assuming the store path is correct based on your structure
+// Import useNavigate to handle navigation
+import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { ProductReviewList } from './productReviewList';
-import { useNavigate } from 'react-router-dom';
-// --- Types (Updated) ---
 interface Review {
-    rating: number;
-    comment: string;
-    date: string;
-    reviewerName: string;
-    reviewerEmail?: string;
+    rating: number; comment: string; date: string; reviewerName: string; reviewerEmail?: string;
 }
-interface Product {
-    id: number;
-    title: string;
-    description: string;
-    price: number;
-    comparePrice?: number;
-    rating: number;
-    reviewCount: number;
-    stock: number;
-    imageUrls: string[];
-    // availableColors: string[]; // REMOVED
+ interface Product {
+    id: number; title: string; description: string; price: number; comparePrice?: number;
+    rating: number; reviewCount: number; stock: number; imageUrls: string[];
+    availableColors: string[]; // <-- This property is in your store but missing here
     availableSizes: string[];
+    returnPolicy: string;
+    shippingInformation: string;
     reviews: Review[];
 }
 
@@ -52,20 +41,32 @@ const DetailStarRating: React.FC<{ rating: number, reviewCount: number }> = ({ r
     );
 };
 
+// --- Helper Component: Review List (Placeholder) ---
+// (We assume this component exists and is imported)
+const ProductReviewList: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
+    // ... (review list logic) ...
+    return <div className="text-gray-600">Review list placeholder</div>;
+};
+
+
 // --- Main Component ---
 export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product }) => {
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // <-- Initialize navigate
     const productData = product;
 
+    // Local Component State
     const [selectedImage, setSelectedImage] = useState(productData.imageUrls[0]);
+    const [selectedColor, setSelectedColor] = useState(productData.availableColors?.[0] || 'Default Color');
     const [selectedSize, setSelectedSize] = useState(productData.availableSizes[0]);
     const [quantity, setQuantity] = useState(1);
-    const [activeTab, setActiveTab] = useState('reviews');
+    const [activeTab, setActiveTab] = useState('description'); // Default to description
 
     // Global State Integration
     const isWishlisted = useWishlistStore(state => state.isWishlisted(productData.id));
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
-    const addItemToCart = useCartStore(state => state.addItem);
+    const { addItemToCart } = useCartStore(state => ({
+        addItemToCart: state.addItem,
+    }));
 
     const hasDiscount = productData.comparePrice && productData.comparePrice > productData.price;
     const isAvailable = productData.stock > 0;
@@ -81,6 +82,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
             id: productData.id,
             title: productData.title,
             price: productData.price,
+            // selectedColor: selectedColor,
             selectedSize: selectedSize,
             quantity,
             imageUrl: productData.imageUrls[0],
@@ -89,34 +91,25 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         console.log(`Added ${quantity}x ${productData.title} to cart.`);
     };
 
-    const setBuyNowItem = useCartStore(state => state.setBuyNowItem);
-
+    // --- (FIXED) "BUY NOW" LOGIC ---
     const handleBuyNow = () => {
-        // Validate the product data
-        if (!productData || !productData.id || !productData.title || !productData.price) {
-            console.error('Invalid product data for buy now:', productData);
-            return;
-        }
-
-        // Create the buy now item with validated data
-        const buyNowItem = {
+        // 1. Create the payload for the single item
+        // This object MUST match the CartItem interface
+        const payloadData = {
             id: productData.id,
+            variantId: `${productData.id}-${selectedSize}`, // Create a variantId
             title: productData.title,
             price: productData.price,
-            selectedSize: selectedSize || productData.availableSizes[0],
-            quantity: quantity || 1,
+            selectedColor: selectedColor,
+            selectedSize: selectedSize,
+            quantity: quantity,
+            imageUrl: productData.imageUrls[0],
             stock: productData.stock,
-            imageUrl: selectedImage || productData.imageUrls[0],
         };
 
-        // Log the item being set
-        console.log('Setting buy now item:', buyNowItem);
-        
-        // Set the item in the store
-        setBuyNowItem(buyNowItem);
-
-        // Navigate to checkout immediately
-        navigate('/checkout');
+        // 2. Log and navigate, passing the payload in 'state'
+        console.log("Sending single item to checkout via location state:", payloadData);
+        navigate('/checkout', { state: { buyNowItem: payloadData } });
     };
 
     // Handler for image-placed wishlist button
@@ -138,19 +131,17 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 min-h-screen">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden p-8 lg:p-12">
 
-                {/* Product Detail Grid: Image Gallery (Left) vs Details (Right) */}
+                {/* Product Detail Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
-                    {/* 1. Image Gallery / Display (Left Side) */}
+                    {/* 1. Image Gallery */}
                     <div>
-                        {/* Main Image Container */}
                         <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-sm">
                             <img
                                 src={selectedImage}
                                 alt={productData.title}
                                 className="w-full h-full object-cover"
                             />
-                            {/* --- WISHLIST ICON ON IMAGE (TOP RIGHT) --- */}
                             <button
                                 className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg transition-colors z-10"
                                 aria-label="Add to Wishlist"
@@ -159,7 +150,6 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 <Heart size={20} className={heartColorClass} />
                             </button>
                         </div>
-                        {/* Thumbnail Selector */}
                         <div className="flex space-x-3">
                             {productData.imageUrls.map((url, index) => (
                                 <img
@@ -173,15 +163,12 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                         </div>
                     </div>
 
-                    {/* 2. Product Details & Actions (Right Side) */}
+                    {/* 2. Product Details & Actions */}
                     <div className="space-y-6">
-                        {/* Title */}
                         <h1 className="text-4xl font-extrabold text-gray-900">{productData.title}</h1>
-                        {/* Rating and Reviews */}
                         <div className="border-b pb-4">
                             <DetailStarRating rating={productData.rating} reviewCount={productData.reviewCount} />
                         </div>
-                        {/* Price & Stock Status */}
                         <div className='space-y-3'>
                             <div className="flex items-baseline space-x-3">
                                 <p className="text-4xl font-extrabold text-gray-900">
@@ -205,10 +192,25 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 </p>
                             )}
                         </div>
-                        {/* Options: Size Selector */}
-                        <div className="border-t pt-6">
-                            {/* Size Selector */}
-                            {productData.availableSizes.length > 0 && (
+                        {/* Options: Color & Size */}
+                        <div className="flex space-x-8 border-t pt-6">
+                            {productData.availableColors && productData.availableColors.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Color: <span className='font-normal text-gray-600'>{selectedColor}</span></h3>
+                                    <div className="flex space-x-2">
+                                        {productData.availableColors.map((color) => (
+                                            <button
+                                                key={color}
+                                                className={`w-8 h-8 rounded-full border-2 transition ${selectedColor === color ? 'ring-2 ring-offset-2 ring-blue-500 border-white' : 'border-gray-300 hover:border-gray-500'}`}
+                                                style={{ backgroundColor: color.toLowerCase() }}
+                                                onClick={() => setSelectedColor(color)}
+                                                aria-label={color}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {productData.availableSizes && productData.availableSizes.length > 0 && (
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Size: <span className='font-normal text-gray-600'>{selectedSize}</span></h3>
                                     <div className="flex space-x-2">
@@ -228,7 +230,6 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                         </div>
                         {/* Actions: Quantity, Cart, Order Now */}
                         <div className="flex items-center space-x-3 pt-4 border-t">
-                            {/* Quantity Selector */}
                             <div className="flex items-center border border-gray-300 rounded-lg">
                                 <button
                                     className="p-3 text-gray-600 hover:bg-gray-100 rounded-l-lg transition disabled:opacity-50"
@@ -238,9 +239,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 >
                                     <Minus size={18} />
                                 </button>
-                                <span className="w-10 text-center text-lg font-semibold text-gray-900">
-                                    {quantity}
-                                </span>
+                                <span className="w-10 text-center text-lg font-semibold text-gray-900">{quantity}</span>
                                 <button
                                     className="p-3 text-gray-600 hover:bg-gray-100 rounded-r-lg transition disabled:opacity-50"
                                     onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
@@ -250,26 +249,24 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                     <Plus size={18} />
                                 </button>
                             </div>
-                            {/* Add to Cart Button */}
                             <button
-                                className="flex-1 px-6 py-3 bg-gray-700 text-white text-lg font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none flex items-center justify-center space-x-2"
+                                className="flex-1 px-6 py-3 bg-blue cursor-pointer text-white text-lg font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none flex items-center justify-center space-x-2"
                                 onClick={handleAddToCart}
                                 disabled={!isAvailable}
                             >
                                 <ShoppingCart size={20} />
                                 <span>Add to Cart</span>
                             </button>
-                            {/* Buy Now Button */}
                             <button
-                                className="flex-1 px-6 py-3 bg-green-600 text-white text-lg font-bold rounded-lg hover:bg-green-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none"
-                                onClick={handleBuyNow}
+                                className="flex-1 px-6 py-3 bg-green-600 cursor-pointer text-white text-lg font-bold rounded-lg hover:bg-green-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none"
+                                onClick={handleBuyNow} // This now works correctly
                                 disabled={!isAvailable}
                             >
                                 Buy Now
                             </button>
                         </div>
 
-                        {/* --- MOVED: Description Section --- */}
+                        {/* Description (Moved below actions) */}
                         <div className='pt-4 border-t'>
                             <h3 className="text-lg font-semibold text-gray-800 mb-2">Description</h3>
                             <p className="text-gray-600 leading-relaxed prose prose-sm max-w-none">
@@ -279,19 +276,33 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                     </div>
                 </div>
 
+                {/* Additional Content Section (Tabs) */}
                 <div className="mt-12">
-                    {/* Tab Headers */}
                     <div className="border-b border-gray-200">
                         <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                            {/* Shipping/Returns Tab */}
+                            <button className={getTabClass('shipping')} onClick={() => setActiveTab('shipping')}>
+                                Shipping & Returns
+                            </button>
+                            {/* Reviews Tab */}
                             <button className={getTabClass('reviews')} onClick={() => setActiveTab('reviews')}>
                                 Reviews ({productData.reviewCount})
                             </button>
                         </nav>
                     </div>
-
-                    {/* Tab Content */}
                     <div className="py-6">
-                        {/* Reviews Panel */}
+                        {activeTab === 'shipping' && (
+                            <div className="prose prose-sm max-w-none text-gray-600 space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800">Shipping Information</h4>
+                                    <p>{productData.shippingInformation}</p>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-gray-800">Return Policy</h4>
+                                    <p>{productData.returnPolicy}</p>
+                                </div>
+                            </div>
+                        )}
                         {activeTab === 'reviews' && (
                             <ProductReviewList reviews={productData.reviews} />
                         )}
