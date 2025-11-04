@@ -1,13 +1,16 @@
-export type TUserStore = {
-  isLoggedIn: boolean;
-  token?: string;
-  user: TUser | null;
-  setUser: (user: TUser) => void;
-  setIsLoggedIn: (status: boolean) => void;
-};
-
-export type TUser = {
+interface User {
+  id: string;
   name: string;
   email: string;
-  token: string;
+}
+
+export type TUserStore = {
+  isLoggedIn: boolean;
+  user: User | null;
+
+  setUser: (user: User | null) => void;
+  setIsLoggedIn: (status: boolean) => void;
+
+  register: (values: any) => Promise<any>;
+  login: (values: any) => Promise<any>
 };

@@ -1,27 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // <-- 1. Import useEffect
 import { useFormik } from 'formik';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-
 import { LoginSchema, LoginValues } from '../../validation/authSchemas';
+import { useUserStore } from '../../store/user';
+import { isAxiosError } from 'axios';
+// --- 2. Import useLocation ---
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface LoginFormValues extends LoginValues { }
 
 export const LoginForm: React.FC = () => {
+
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
+    const loginAction = useUserStore(state => state.login);
+    const navigate = useNavigate();
 
-    const handleSubmitForm = async (values: LoginFormValues) => {
+    // --- 3. Get location state ---
+    const location = useLocation();
+    // Data from RegisterForm, if it exists
+    const locationState = location.state as { email?: string; password?: string } | null;
+
+    const handleSubmitForm = async (values: LoginValues) => {
         setIsSubmitting(true);
-        console.log("Login PAYLOAD:", JSON.stringify(values, null, 2));
-        setIsSubmitting(false);
+        setFormError('');
+
+        try {
+            await loginAction(values);
+            navigate('/');
+
+        } catch (error) {
+            if (isAxiosError(error)) {
+                setFormError(error.response?.data?.message || 'Invalid email or password.');
+            } else {
+                setFormError('An unknown error occurred.');
+                console.error(error);
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const formik = useFormik<LoginFormValues>({
-        initialValues: { email: '', password: '' },
+        // --- 4. Set initial values from locationState ---
+        initialValues: {
+            email: locationState?.email || '',
+            password: locationState?.password || ''
+        },
         validationSchema: LoginSchema,
         onSubmit: handleSubmitForm,
+        enableReinitialize: true, // Allow form to reinitialize with new state
     });
 
+    // --- 5. Clear location state after using it ---
+    useEffect(() => {
+        // If we received data from the register page, 
+        // clear it from history so a refresh doesn't keep the data.
+        if (locationState) {
+            window.history.replaceState({}, document.title);
+        }
+    }, [locationState]); // Run this only when locationState changes
 
     const getInputClasses = (field: keyof LoginFormValues) => {
         const base = "w-full pl-10 pr-4 py-3 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 transition duration-150 text-sm";
@@ -91,9 +130,18 @@ export const LoginForm: React.FC = () => {
                             <div className="text-xs text-red-500 mt-1">{formik.errors.password}</div>
                         ) : null}
                     </div>
+
+                    {/* API Error Message */}
+                    {formError && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+                            <p>{formError}</p>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         disabled={isSubmitting || !formik.isValid}
+                        // FIX: Corrected 'bg-blue' to 'bg-blue-600'
                         className="w-full mt-6 flex items-center justify-center space-x-2 py-3 bg-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
                     >
                         {isSubmitting ? 'Processing...' : 'Sign In'}
@@ -103,12 +151,12 @@ export const LoginForm: React.FC = () => {
                 <div className='flex justify-between mt-5'>
                     <p className="text-sm text-gray-600">
                         Not have an account?{' '}
-                        <a href="/register" className="font-semibold  transition duration-150">
+                        <a href="/register" className="font-semibold text-blue-600 hover:text-blue-700 transition duration-150">
                             Create Account
                         </a>
                     </p>
                     <p className='text-sm text-gray-600 font-semibold '>
-                        <a href="/forgot-password" className="transition duration-150">
+                        <a href="/forgot-password" className="text-blue-600 hover:text-blue-700 transition duration-150">
                             Forgot Password?
                         </a>
                     </p>
@@ -117,3 +165,4 @@ export const LoginForm: React.FC = () => {
         </div>
     );
 };
+

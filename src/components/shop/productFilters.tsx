@@ -10,7 +10,7 @@ const CATEGORIES = [
 interface ProductFilter {
     category: string[] | null;
     minPrice: number;
-    sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'rating';
+    sortBy: 'relevance' | 'price-asc' | 'price-desc';
     maxPrice?: number;
     inStockOnly: boolean;
 }

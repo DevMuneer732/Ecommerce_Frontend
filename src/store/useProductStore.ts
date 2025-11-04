@@ -32,7 +32,7 @@ interface ProductFilter {
     category: string[] | null;
     minPrice: number;
     maxPrice?: number;
-    sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'rating';
+    sortBy: 'relevance' | 'price-asc' | 'price-desc' ;
     inStockOnly: boolean;
 }
 
@@ -212,10 +212,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 filteredCatalog.sort((a, b) => a.price - b.price);
             } else if (mergedFilters.sortBy === 'price-desc') {
                 filteredCatalog.sort((a, b) => b.price - a.price);
-            } else if (mergedFilters.sortBy === 'rating') {
-                filteredCatalog.sort((a, b) => b.rating - a.rating);
-            }
-
+            } 
+            
             set({
                 catalog: filteredCatalog,
                 isLoading: false,

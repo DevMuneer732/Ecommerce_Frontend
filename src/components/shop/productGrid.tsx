@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Loader2, ChevronDown, RefreshCcw } from 'lucide-react';
 import { ProductCard } from '../products/productCard';
 // Corrected import path assuming ProductCard is in 'common'
@@ -41,7 +41,6 @@ const SORTS = [
     { value: 'relevance', label: 'Relevance' },
     { value: 'price-asc', label: 'Price: Low to High' },
     { value: 'price-desc', label: 'Price: High to Low' },
-    { value: 'rating', label: 'Top Rated' },
 ];
 
 

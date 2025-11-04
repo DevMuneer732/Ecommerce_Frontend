@@ -9,7 +9,7 @@ export interface LoginValues extends EmailOnlyValues {
 }
 
 export interface RegisterValues extends LoginValues {
-    fullName: string;
+    name: string;
     confirmPassword: string;
 }
 
@@ -43,10 +43,10 @@ export const LoginSchema = yup.object<LoginValues>().shape({
 
 /** 3. Schema for Registration Form */
 export const RegisterSchema = yup.object<RegisterValues>().shape({
-    fullName: yup
+    name: yup
         .string()
         .min(2, 'Name must be at least 2 characters')
-        .required('Full Name is required'),
+        .required('Name is required'),
     email: emailValidation,
     password: passwordValidation,
     confirmPassword: yup

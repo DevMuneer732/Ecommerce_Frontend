@@ -1,8 +1,6 @@
 /* eslint-disable prettier/prettier */
 import React, { useState } from 'react';
 import { User, Heart, ShoppingCart, Search, Menu, X } from 'lucide-react';
-import { useThemeChooser } from '../contexts/theme-chooser';
-import { ThemeChooser } from '../components/shared/theme-chooser';
 import { useNavigate } from 'react-router-dom';
 
 // Import both stores
@@ -11,7 +9,6 @@ import { useWishlistStore } from '../store/useWishlistStore';
 
 
 const Navbar: React.FC = () => {
-  const { toggle } = useThemeChooser();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -39,24 +36,6 @@ const Navbar: React.FC = () => {
             </a>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="/shop"
-              className="text-sm font-medium text-gray-700 hover:text-amber-600 transition-colors relative group"
-            >
-              Shop Now
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a
-              href="/collection"
-              className="text-sm font-medium text-gray-700 hover:text-amber-600 transition-colors relative group"
-            >
-              Collections
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-600 group-hover:w-full transition-all duration-300"></span>
-            </a>
-          </div>
-
           {/* Search Bar (Desktop) */}
           <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
             <div className="relative w-full">
@@ -71,14 +50,6 @@ const Navbar: React.FC = () => {
 
           {/* Icons */}
           <div className="flex items-center space-x-6">
-
-            <button
-              onClick={toggle}
-              className='lg:hidden text-gray-700 hover:text-amber-600 transition-colors'
-            >
-              <ThemeChooser />
-            </button>
-            {/* Search Icon (Mobile/Tablet) */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="lg:hidden text-black hover:text-amber-600 transition-colors"
@@ -156,18 +127,6 @@ const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white">
           <div className="px-4 py-4 space-y-3">
-            <a
-              href="/shop"
-              className="block text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
-            >
-              Shop Now
-            </a>
-            <a
-              href="/collection"
-              className="block text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors"
-            >
-              Collections
-            </a>
             {/* ... other mobile links ... */}
             <div className="border-t border-gray-200 pt-3 space-y-3">
               <a

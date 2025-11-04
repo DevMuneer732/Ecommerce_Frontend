@@ -1,34 +1,62 @@
 import React, { useState } from 'react';
 // Assuming these libraries are available
 import { useFormik } from 'formik';
-import { Eye, EyeOff, Mail, Lock,  User } from 'lucide-react'; 
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { RegisterSchema, RegisterValues } from '../../validation/authSchemas';
+import { useUserStore } from '../../store/user';
+import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 
 
 export const RegisterForm: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formError, setFormError] = useState(''); 
+    const [formError, setFormError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const registerAction = useUserStore(state => state.register)
+    const navigate = useNavigate();
+
 
     const handleSubmitForm = async (values: RegisterValues) => {
         setIsSubmitting(true);
         setFormError('');
         setSuccessMessage('');
-        console.log(JSON.stringify(values, null, 2)); 
-        setIsSubmitting(false);
+
+        try {
+            await registerAction(values);
+
+            setSuccessMessage('Registration successful! Redirecting to login...');
+            setTimeout(() => {
+                navigate('/login', {
+                    state: {
+                        email: values.email,
+                        password: values.password
+                    }
+                });
+            }, 1500);
+
+        } catch (error) {
+            if (isAxiosError(error)) {
+                setFormError(error.response?.data?.message || 'Registration failed. Please try again.');
+            } else {
+                setFormError('An unknown error occurred.');
+                console.error(error);
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const formik = useFormik<RegisterValues>({
         initialValues: {
-            fullName: '',
+            name: '',
             email: '',
             password: '',
             confirmPassword: '',
         },
         validationSchema: RegisterSchema,
-        onSubmit: handleSubmitForm, 
+        onSubmit: handleSubmitForm,
     });
 
 
@@ -60,22 +88,22 @@ export const RegisterForm: React.FC = () => {
                 </div>
 
                 <form onSubmit={formik.handleSubmit} className="space-y-4">
-                    
+
                     {/* Full Name Field */}
                     <div>
-                        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
-                                id="fullName"
+                                id="name"
                                 type="text"
-                                placeholder="Enter Your Full Name"
-                                {...formik.getFieldProps('fullName')}
-                                className={getInputClasses('fullName')}
+                                placeholder="Enter Your Name"
+                                {...formik.getFieldProps('name')}
+                                className={getInputClasses('name')}
                             />
                         </div>
-                        {formik.touched.fullName && formik.errors.fullName ? (
-                            <div className="text-xs text-red-500 mt-1">{formik.errors.fullName}</div>
+                        {formik.touched.name && formik.errors.name ? (
+                            <div className="text-xs text-red-500 mt-1">{formik.errors.name}</div>
                         ) : null}
                     </div>
 
