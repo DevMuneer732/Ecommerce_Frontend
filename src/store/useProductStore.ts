@@ -1,17 +1,24 @@
 import { create } from 'zustand';
+import { productService } from '../services/productService';
 
 // --- Shared Product and Filter Interfaces ---
-
 interface Review {
+    _id: string;
     rating: number;
     comment: string;
     date: string;
     reviewerName: string;
+    user: {
+        _id: string;
+        name: string;
+    };
 }
-
-// Ensure Product interface includes all needed fields for ProductCard
-interface Product {
-    id: number;
+export interface Category {
+    _id: string;
+    name: string;
+}
+export interface Product {
+    id: string;
     title: string;
     description: string;
     price: number;
@@ -26,215 +33,165 @@ interface Product {
     shippingInformation: string;
     returnPolicy: string;
     reviews: Review[];
+    variants: any[];
 }
 
-interface ProductFilter {
+export interface ProductFilter {
     category: string[] | null;
     minPrice: number;
     maxPrice?: number;
-    sortBy: 'relevance' | 'price-asc' | 'price-desc' ;
+    sortBy: 'relevance' | 'price_asc' | 'price_desc' | 'latest';
     inStockOnly: boolean;
+    page: number;
 }
 
 interface ProductState {
     catalog: Product[];
     selectedProduct: Product | null;
+    categories: Category[];
     filters: ProductFilter;
+    currentPage: number;
+    totalPages: number;
+    totalProducts: number;
     isLoading: boolean;
     error: string | null;
-
-    // Actions
     fetchProducts: (filters: Partial<ProductFilter>) => Promise<void>;
-    fetchSingleProduct: (id: number) => Promise<void>;
+    fetchSingleProduct: (id: number | string) => Promise<void>;
+    fetchCategories: () => Promise<void>;
     setFilters: (newFilters: Partial<ProductFilter>) => void;
 }
 
-// --- Mock Data Source (Added Category) ---
-const DUMMY_PRODUCT_CATALOG: Product[] = [
-    {
-        id: 101,
-        title: 'Running Shoe Pro',
-        price: 99.99,
-        imageUrls: ["https://placehold.co/600x600/purple/white?text=Shoe+1", "https://placehold.co/600x600/blue/white?text=Shoe+2", "https://placehold.co/600x600/yellow/black?text=Shoe+3", "https://placehold.co/600x600/orange/white?text=Shoe+2"],
-        rating: 4.5,
-        reviewCount: 154,
-        stock: 8,
-        category: 'Footwear',
-        availableColors: ['Black', 'White'], // Added available colors
-        availableSizes: ["M", "XL"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 15 Days",
-        returnPolicy: "30 Days Return Policy",
-        reviews: [
-            {
-                "rating": 2,
-                "comment": "Very unhappy with my purchase!",
-                "date": "2024-05-23T08:56:21.618Z",
-                "reviewerName": "John Doe",
-            },
-            {
-                "rating": 5,
-                "comment": "Very satisfied!",
-                "date": "2024-05-23T08:56:21.618Z",
-                "reviewerName": "Scarlett Wright",
-            }
-        ],
-    },
-    {
-        id: 102,
-        title: 'Hush Puppies',
-        price: 49.99,
-        imageUrls: ["https://placehold.co/600x600/0A84FF/FFFFFF?text=Shoe+2"],
-        rating: 4.2,
-        reviewCount: 310,
-        stock: 20,
-        category: 'Footwear',
-        availableColors: ['Red', 'Blue'], // Added available colors
-        availableSizes: ["S", "L"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 10 Days",
-        returnPolicy: "No Returns",
-        reviews: [],
-    },
-    {
-        id: 103,
-        title: "Minimalist Smart Watch",
-        price: 199.00,
-        comparePrice: 219.00,
-        rating: 5.0,
-        reviewCount: 450,
-        stock: 10,
-        category: 'Accessories',
-        imageUrls: ["https://placehold.co/600x600/purple/white?text=Shoe+1", "https://placehold.co/600x600/blue/white?text=Shoe+2"],
-        availableColors: ['Silver', 'Black'],
-        availableSizes: ["M", "XL"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 5 Days",
-        returnPolicy: "30 Days Return Policy",
-        reviews: [],
-    },
-    {
-        id: 104,
-        title: "Noise-Cancelling Headphones",
-        price: 79.99,
-        rating: 4.2,
-        reviewCount: 210,
-        stock: 22,
-        category: 'Electronics',
-        imageUrls: ["https://placehold.co/600x600/333333/FFFFFF?text=Headphones"],
-        availableColors: ['Black'],
-        availableSizes: ["One Size"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 3 Days",
-        returnPolicy: "30 Days Return Policy",
-        reviews: [],
-    },
-    {
-        id: 105,
-        title: "Premium Heritage Leather Backpack",
-        price: 189.99,
-        comparePrice: 249.99,
-        rating: 4.7,
-        reviewCount: 345,
-        stock: 12,
-        category: 'Accessories',
-        imageUrls: ["https://placehold.co/600x600/1e293b/FFFFFF?text=Backpack"],
-        availableColors: ['Brown'],
-        availableSizes: ["One Size"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 7 Days",
-        returnPolicy: "14 Days Return Policy",
-        reviews: [],
-    },
-    {
-        id: 106,
-        title: "Tommy Watch",
-        price: 34.99,
-        rating: 4.2,
-        reviewCount: 310,
-        stock: 50,
-        category: 'Apparel',
-        imageUrls: ["https://placehold.co/600x600/64D2FF/FFFFFF?text=T-Shirt"],
-        availableColors: ['Blue', 'White'],
-        availableSizes: ["S", "M", "L", "XL"],
-        description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.",
-        shippingInformation: "Ships in 2 Days",
-        returnPolicy: "30 Days Return Policy",
-        reviews: [],
-    },
-];
-// --- End Mock Data Source ---
+// --- (SAB SE IMPORTANT) Data Transformation Function ---
+const transformApiProduct = (apiProduct: any): Product => {
+    const firstVariant = apiProduct.variants && apiProduct.variants.length > 0
+        ? apiProduct.variants[0]
+        : { price: 0, stock: 0, images: [], size: 'N/A', comparePrice: 0 };
+
+    // Sab variants k unique sizes aur colors jama karein
+    const allSizes: string[] = apiProduct.variants
+        ? Array.from(
+            new Set(
+                apiProduct.variants
+                    .map((v: any) => v.size)
+                    .filter((s: any): s is string => typeof s === 'string' && s !== '')
+            )
+        )
+        : [];
+    const allColors: string[] = apiProduct.variants
+        ? Array.from(
+            new Set(
+                apiProduct.variants
+                    .map((v: any) => v.color)
+                    .filter((c: any): c is string => typeof c === 'string' && c !== '')
+            )
+        )
+        : [];
+
+    return {
+        id: apiProduct._id,
+        title: apiProduct.title,
+        description: apiProduct.description,
+        price: firstVariant.price,
+        comparePrice: firstVariant.comparePrice || undefined,
+        rating: apiProduct.rating || 0,
+        reviewCount: apiProduct.numReviews || 0,
+        stock: firstVariant.stock,
+        imageUrls: firstVariant.images.map((img: any) => img.url),
+        availableSizes: allSizes,
+        availableColors: allColors, // <-- YEH ZAROORI HAI
+        category: apiProduct.category?.name || 'Uncategorized',
+        shippingInformation: apiProduct.shippingInformation,
+        returnPolicy: apiProduct.returnPolicy,
+        reviews: (apiProduct.reviews || []).map((r: any) => ({
+            ...r,
+            reviewerName: r.user?.name || 'Anonymous'
+        })),
+        variants: apiProduct.variants,
+    };
+};
+// --- End Transformation ---
 
 
 export const useProductStore = create<ProductState>((set, get) => ({
     catalog: [],
     selectedProduct: null,
+    categories: [],
     filters: {
         category: null,
         minPrice: 0,
         maxPrice: 300,
         sortBy: 'relevance',
         inStockOnly: false,
+        page: 1,
     },
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0,
     isLoading: false,
     error: null,
 
-    fetchProducts: async (newFilters = {}) => {
+    // --- fetchProducts (No changes needed) ---
+    fetchProducts: async (filtersToFetch) => {
         set({ isLoading: true, error: null });
-
-        const mergedFilters = { ...get().filters, ...newFilters };
-        set({ filters: mergedFilters });
-
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const mergedFilters = { ...get().filters, ...filtersToFetch };
+        set({ filters: mergedFilters }); // Update filters first
 
         try {
-            let filteredCatalog = DUMMY_PRODUCT_CATALOG;
+            const response = await productService.getAllProducts(mergedFilters);
+            const transformedCatalog = response.products.map(transformApiProduct);
 
-            // 1. Filter by Category
-            if (mergedFilters.category && mergedFilters.category.length > 0) {
-                filteredCatalog = filteredCatalog.filter(p =>
-                    p.category && mergedFilters.category!.includes(p.category)
-                );
+            if (mergedFilters.page === 1) {
+                set({
+                    catalog: transformedCatalog,
+                    currentPage: response.currentPage,
+                    totalPages: response.totalPages,
+                    totalProducts: response.totalProducts,
+                    isLoading: false,
+                });
+            } else {
+                set((state) => ({
+                    catalog: [...state.catalog, ...transformedCatalog],
+                    currentPage: response.currentPage,
+                    totalPages: response.totalPages,
+                    totalProducts: response.totalProducts,
+                    isLoading: false,
+                }));
             }
-
-            // 2. Filter by Price Range
-            if (mergedFilters.maxPrice !== undefined) {
-                filteredCatalog = filteredCatalog.filter(p => p.price <= mergedFilters.maxPrice!);
-            }
-
-            // 3. Filter by Availability
-            if (mergedFilters.inStockOnly) {
-                filteredCatalog = filteredCatalog.filter(p => p.stock > 0);
-            }
-
-            // 4. Sort Results
-            if (mergedFilters.sortBy === 'price-asc') {
-                filteredCatalog.sort((a, b) => a.price - b.price);
-            } else if (mergedFilters.sortBy === 'price-desc') {
-                filteredCatalog.sort((a, b) => b.price - a.price);
-            } 
-            
-            set({
-                catalog: filteredCatalog,
-                isLoading: false,
-            });
-        } catch (err) {
-            set({ error: "Failed to fetch products.", isLoading: false });
+        } catch (err: any) {
+            console.error('Failed to fetch products:', err);
+            set({ error: err.message || "Failed to fetch products.", isLoading: false });
         }
     },
 
-    fetchSingleProduct: async (id: number) => {
+    // --- (FIXED) fetchSingleProduct ---
+    fetchSingleProduct: async (id: number | string) => {
         set({ isLoading: true, error: null, selectedProduct: null });
-        await new Promise(resolve => setTimeout(resolve, 600));
         try {
-            const product = DUMMY_PRODUCT_CATALOG.find(p => p.id === id);
-            if (product) {
-                set({ selectedProduct: product, isLoading: false });
+            const response = await productService.getSingleProduct(id);
+            if (response.product) {
+                // --- FIX: Use the transform function ---
+                const transformedProduct = transformApiProduct(response.product);
+                set({ selectedProduct: transformedProduct, isLoading: false });
+                // --- END FIX ---
             } else {
                 set({ error: `Product with ID ${id} not found.`, isLoading: false, selectedProduct: null });
             }
-        } catch (err) {
-            set({ error: "Failed to fetch product details.", isLoading: false, selectedProduct: null });
+        } catch (err: any) {
+            console.error('Failed to fetch single product:', err);
+            set({ error: err.message || "Failed to fetch product details.", isLoading: false, selectedProduct: null });
+        }
+    },
+
+    // --- fetchCategories (No changes needed) ---
+    fetchCategories: async () => {
+        try {
+            if (get().categories.length > 0) return;
+            const response = await productService.getAllCategories();
+            if (response.categories) {
+                set({ categories: response.categories });
+            }
+        } catch (err: any) {
+            console.error('Failed to fetch categories:', err);
         }
     },
 

@@ -1,19 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Filter, RotateCcw } from 'lucide-react'; // Added RotateCcw for Clear Filters icon
+import React, { useEffect } from 'react';
+import { Filter, RotateCcw } from 'lucide-react';
+// Store se types aur categories fetch karnay k liye
+import { useProductStore, ProductFilter, Category } from '../../store/useProductStore';
 
-// --- Data Structures ---
-const CATEGORIES = [
-    'Footwear', 'Apparel', 'Accessories', 'Electronics'
-];
-
-// Interface matches the Product Store
-interface ProductFilter {
-    category: string[] | null;
-    minPrice: number;
-    sortBy: 'relevance' | 'price-asc' | 'price-desc';
-    maxPrice?: number;
-    inStockOnly: boolean;
-}
+// --- REMOVED: const CATEGORIES = [...] ---
 
 interface FilterSidebarProps {
     filters: ProductFilter;
@@ -21,54 +11,55 @@ interface FilterSidebarProps {
 }
 
 export const ProductFilters: React.FC<FilterSidebarProps> = ({ filters, setFilters }) => {
-    // Local state to manage which categories are checked
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(filters.category || []);
 
-    // Effect to keep local state synced with global state
+    // --- Store se dynamic categories fetch karein ---
+    const { categories, fetchCategories } = useProductStore((state) => ({
+        categories: state.categories,
+        fetchCategories: state.fetchCategories,
+    }));
+
+    // Component load hotay hi categories fetch karein
     useEffect(() => {
-        setSelectedCategories(filters.category || []);
-    }, []);
+        fetchCategories();
+    }, [fetchCategories]);
 
     // Handler for category checkbox changes
-    const handleCategoryChange = (category: string, isChecked: boolean) => {
+    const handleCategoryChange = (categoryId: string, isChecked: boolean) => {
+        const currentCategories = filters.category || [];
         let newCategories: string[] = [];
 
-        if (category === 'All Products') {
-            newCategories = []; // Clear categories
+        if (categoryId === 'All Products') {
+            newCategories = []; // "All Products" select karnay par filter clear karein
         } else if (isChecked) {
-            newCategories = [...selectedCategories.filter(c => c !== 'All Products'), category];
+            newCategories = [...currentCategories, categoryId];
         } else {
-            newCategories = selectedCategories.filter(c => c !== category);
+            newCategories = currentCategories.filter(c => c !== categoryId);
         }
 
-        setSelectedCategories(newCategories);
-        setFilters({ category: newCategories.length > 0 ? newCategories : null });
+        // Store ko naye filters k sath update karein aur page 1 par reset karein
+        setFilters({ category: newCategories.length > 0 ? newCategories : null, page: 1 });
     };
 
     // Handler for Availability checkbox
     const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFilters({ inStockOnly: e.target.checked });
+        setFilters({ inStockOnly: e.target.checked, page: 1 }); // Page 1 par reset karein
     };
 
-    // --- NEW: Handler for Clear Filters Button ---
+    // Handler for Clear Filters Button
     const handleClearFilters = () => {
-        // Reset local state for categories
-        setSelectedCategories([]);
-        // Reset global filter state to defaults
         setFilters({
             category: null,
             inStockOnly: false,
-            // Optionally reset price range, sort order etc. if needed
-            // sortBy: 'relevance', 
-            // maxPrice: 300 
+            page: 1,
+            sortBy: 'relevance',
         });
     };
 
-    const isCategorySelected = (category: string) => selectedCategories.includes(category);
-    const isAllProductsSelected = selectedCategories.length === 0;
+    // Helper functions ab 'filters' prop par depend karti hain
+    const isCategorySelected = (categoryId: string) => filters.category?.includes(categoryId) ?? false;
+    const isAllProductsSelected = !filters.category || filters.category.length === 0;
 
-    // Check if any filters are currently active (excluding default sort/price)
-    const filtersActive = filters.category !== null || filters.inStockOnly;
+    const filtersActive = (filters.category && filters.category.length > 0) || filters.inStockOnly;
 
     return (
         <div className="space-y-8 p-4 bg-white rounded-xl shadow-lg border border-gray-100 sticky top-24">
@@ -77,7 +68,6 @@ export const ProductFilters: React.FC<FilterSidebarProps> = ({ filters, setFilte
                 <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
                     <Filter size={24} /> <span>Filters</span>
                 </h3>
-                {/* --- NEW: Clear Filters Button --- */}
                 {filtersActive && (
                     <button
                         onClick={handleClearFilters}
@@ -109,20 +99,20 @@ export const ProductFilters: React.FC<FilterSidebarProps> = ({ filters, setFilte
                             </span>
                         </label>
                     </li>
-                    {/* Dynamic Categories */}
-                    {CATEGORIES.map(category => {
-                        const isChecked = isCategorySelected(category);
+                    {/* Dynamic Categories from API */}
+                    {categories.map(category => {
+                        const isChecked = isCategorySelected(category._id);
                         return (
-                            <li key={category}>
+                            <li key={category._id}>
                                 <label className="flex items-center space-x-3 text-sm font-medium cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={isChecked}
-                                        onChange={(e) => handleCategoryChange(category, e.target.checked)}
+                                        onChange={(e) => handleCategoryChange(category._id, e.target.checked)}
                                         className={`h-4 w-4 rounded border-gray-300 ${isChecked ? 'text-blue-600 focus:ring-blue-500' : 'text-gray-400'}`}
                                     />
                                     <span className={isChecked ? 'text-blue-600 font-bold' : 'text-gray-700 hover:text-blue-500'}>
-                                        {category}
+                                        {category.name}
                                     </span>
                                 </label>
                             </li>
@@ -139,9 +129,7 @@ export const ProductFilters: React.FC<FilterSidebarProps> = ({ filters, setFilte
                         type="checkbox"
                         id="in-stock"
                         className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
-                        // Bind checked state directly to the global filters prop
                         checked={filters.inStockOnly}
-                        // Use the correct handler
                         onChange={handleStockChange}
                     />
                     <label htmlFor="in-stock" className="text-sm text-gray-700 font-medium cursor-pointer">In Stock Only</label>

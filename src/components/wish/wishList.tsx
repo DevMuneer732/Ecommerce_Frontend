@@ -14,7 +14,6 @@ interface WishlistItem {
     price: number;
     stock: number; // Use stock from store
     available: boolean; // This will be derived from stock
-    // Add other properties from your Product store interface as needed
     description: string;
     comparePrice?: number;
     rating: number;
@@ -38,8 +37,7 @@ export const Wishlist: React.FC = () => {
 
     // 3. Fetch the catalog if it's not already loaded
     useEffect(() => {
-        // This effect runs when the component mounts
-        // If the catalog is empty AND we are not already loading, fetch products.
+
         if (catalog.length === 0 && !isLoading) {
             fetchProducts({}); // Fetch all products with default filters
         }

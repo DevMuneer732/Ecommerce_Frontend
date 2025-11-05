@@ -29,7 +29,7 @@ export const ProductDetail: React.FC = () => {
     // --- Fetch data when the component mounts or productId changes ---
     useEffect(() => {
         if (productId) {
-            fetchSingleProduct(Number(productId));
+            fetchSingleProduct((productId));
         }
         // Dependency array ensures this runs when the ID from the URL changes
     }, [productId]);

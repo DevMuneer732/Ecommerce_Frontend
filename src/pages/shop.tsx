@@ -1,42 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import {  Filter, X } from 'lucide-react';
-// Assuming the ProductStore is correctly created
+import { Filter, X } from 'lucide-react';
 import { useProductStore } from '../store/useProductStore';
 import { ProductGrid } from '../components/shop/productGrid';
 import { ProductFilters } from '../components/shop/productFilters';
 
-// Corrected imports for the modular components
-
-// Note: The Product interface definition should ideally be imported from a central types file
-interface Product {
-    id: number;
-    imageUrl: string;
-    title: string;
-    price: number;
-    comparePrice?: number;
-    rating: number;
-    reviewCount: number;
-}
-
-// Renamed to be consistent with file naming
 export const Shop: React.FC = () => {
-    // Select state and actions from the store
-    const { catalog, filters, isLoading, setFilters, fetchProducts } = useProductStore((state) => ({
-        catalog: state.catalog as Product[],
+
+    const {
+        catalog,
+        filters,
+        isLoading,
+        setFilters,
+        fetchProducts,
+        totalProducts
+    } = useProductStore((state) => ({
+        catalog: state.catalog,
         filters: state.filters,
         isLoading: state.isLoading,
         setFilters: state.setFilters,
         fetchProducts: state.fetchProducts,
+        totalProducts: state.totalProducts, // Get total products for display
     }));
+
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-
+    // --- CRITICAL FIX ---
+    // This useEffect hook should ONLY run when the 'filters' object changes.
+    // The previous logic with 'catalog.length' could cause infinite loops.
     useEffect(() => {
+        // This will fetch products when the page loads
+        // AND refetch whenever 'setFilters' is called from a child component
         fetchProducts(filters);
-        if (catalog.length === 0 && !isLoading) {
-            fetchProducts(filters);
-        }
-    }, [filters, fetchProducts]); 
+    }, [filters, fetchProducts]); // Only depend on 'filters' and 'fetchProducts'
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 min-h-screen">
@@ -53,7 +48,8 @@ export const Shop: React.FC = () => {
                     <Filter size={18} />
                     <span>Filter & Sort</span>
                 </button>
-                <p className="text-sm text-gray-600">{catalog.length} Results</p>
+                {/* Use the store's 'totalProducts' for a more accurate count */}
+                <p className="text-sm text-gray-600">{totalProducts} Results</p>
             </div>
 
             {/* Main Content Grid: Sidebar (1/4) vs Products (3/4) */}
