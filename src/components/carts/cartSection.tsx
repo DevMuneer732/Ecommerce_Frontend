@@ -1,13 +1,31 @@
-import React from 'react';
-import { useCartStore } from '../../store/useCartStore'; 
+import React, { useEffect } from 'react'; // <-- useEffect import karein
+import { useCartStore } from '../../store/useCartStore';
+import { Loader2 } from 'lucide-react'; // Loader import karein
 import { CartItemCart } from './cartItemCart';
 
 export const CartSection: React.FC = () => {
-    // Fetch items from the global store
-    const cartItems = useCartStore(state => state.items);
+    const { items: cartItems, fetchCart, isLoading } = useCartStore((state) => ({
+        items: state.items,
+        fetchCart: state.fetchCart,
+        isLoading: state.isLoading,
+    }));
+
+    // --- (NEW) Fetch cart from DB on component mount ---
+    useEffect(() => {
+        fetchCart();
+    }, [fetchCart]); 
+
     const totalItems = cartItems.length;
 
-    // --- Fallback Dummy Data (for initial testing if store is empty) ---
+    if (isLoading && totalItems === 0) {
+        return (
+            <div className="w-full lg:w-[65%] p-6 lg:p-0 flex justify-center items-center h-96">
+                <Loader2 className="animate-spin h-10 w-10 text-blue-600" />
+            </div>
+        );
+    }
+
+    // --- Empty Cart State ---
     if (totalItems === 0) {
         return (
             <div className="w-full lg:w-[65%] p-6 lg:p-0">
@@ -22,26 +40,17 @@ export const CartSection: React.FC = () => {
         );
     }
 
+    // --- Render actual cart items ---
     return (
         <div className="w-full lg:w-[65%] p-6 lg:p-0">
-
-            {/* Header */}
             <div className="flex justify-between items-baseline mb-6">
                 <p className="text-4xl font-extrabold text-gray-900">Your Shopping Cart ({totalItems})</p>
             </div>
-
-            {/* Item List Container with Scrolling */}
             <div className="max-h-[70vh] overflow-y-auto scrollbar-hide">
                 {cartItems.map(item => (
                     <CartItemCart
-                        key={item.variantId}
-                        imageUrl={item.imageUrl}
-                        title={item.title}
-                        price={item.price}
-                        selectedSize={item.selectedSize} // No selectedColor
-                        quantity={item.quantity}
-                        stock={item.stock}
-                        variantId={item.variantId}
+                        key={item._id}
+                        item={item}
                     />
                 ))}
             </div>

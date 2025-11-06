@@ -24,7 +24,9 @@ export const useUserStore = create<TUserStore>()(
           const responseData = await authService.register(values);
 
           set({ user: responseData.user, isLoggedIn: false });
+          
           return responseData;
+
         },
 
         login: async (values: LoginValues) => {

@@ -1,65 +1,59 @@
 import React from 'react';
-import { ShoppingCart, Trash } from 'lucide-react';
+import { ShoppingCart, Trash, Loader2 } from 'lucide-react';
 // Import the stores for actions
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-
+import { Product } from '../../store/useProductStore';
 // This interface must match the object being passed from Wishlist.tsx
 interface WishlistItemCardProps {
-    item: {
-        id: number;
-        imageUrl: string; // This is now the first image from imageUrls
-        title: string;
-        price: number;
-        available: boolean;
-        stock: number;
-        availableSizes: string[];
-    };
+    item: Product
 }
-
 export const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ item }) => {
-    // --- Get actions from the stores ---
-    const removeFromWishlist = useWishlistStore(state => state.removeFromWishlist);
-    const addItemToCart = useCartStore(state => state.addItem);
 
-    // --- Define Event Handlers ---
+    // (FIX 3) Naye actions hooks istemaal karein
+    const { toggleWishlist } = useWishlistStore();
+    const { addItemToCart, isLoading: isCartLoading } = useCartStore(state => ({
+        addItemToCart: state.addItem,
+        isLoading: state.isLoading,
+    }));
+
+    const isAvailable = item.stock > 0;
 
     const handleRemoveFromWishlist = () => {
-        removeFromWishlist(item.id);
-        console.log(`Removed ${item.title} from wishlist.`);
+        toggleWishlist(item.id); 
     };
 
     const handleMoveToCart = () => {
-        // Add item to cart
-        addItemToCart({
-            id: item.id,
-            title: item.title,
-            price: item.price,
-            selectedSize: item.availableSizes[0] || 'One Size', // Default to first size or 'One Size'
-            stock: item.stock,
-            imageUrl: item.imageUrl,
-            quantity: 1,
-        });
+        // Pehla variant cart mein add karein
+        const firstVariant = item.variants[0];
+        if (firstVariant) {
+            addItemToCart(
+                item.id,         
+                firstVariant._id, 
+                1                 
+            );
+            toggleWishlist(item.id);
+        } else {
+            console.error("Cannot move to cart: Product has no variants.");
+        }
     };
 
     return (
         <div className="flex p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300 items-center border border-gray-100">
 
-            {/* Image */}
             <div className="w-24 h-24 overflow-hidden rounded-lg mr-6 flex-shrink-0">
                 <img
-                    src={item.imageUrl} // Use the single imageUrl
+                    src={item.imageUrls[0]}
                     alt={item.title}
                     className="w-full h-full object-cover"
                 />
             </div>
 
-            {/* Details */}
             <div className="flex-grow">
                 <h3 className="text-xl font-semibold text-gray-900 mb-1">{item.title}</h3>
                 <p className="text-2xl font-extrabold text-gray-900">${item.price.toFixed(2)}</p>
                 <div className="mt-1">
-                    {item.available ? (
+                    {isAvailable ? (
                         <span className="text-sm font-medium text-green-600">In Stock</span>
                     ) : (
                         <span className="text-sm font-medium text-red-600">Out of Stock</span>
@@ -67,32 +61,28 @@ export const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ item }) => {
                 </div>
             </div>
 
-            {/* Actions */}
             <div className="flex space-x-3 ml-4 flex-shrink-0 items-center">
-
-                {/* Add to Cart Button (Wired up) */}
-                {item.available ? (
+                {isAvailable ? (
                     <button
-                        className="p-3 bg-gray-700 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-md"
+                        className="p-3 bg-gray-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-md"
                         onClick={handleMoveToCart}
                         title="Add to Cart"
+                        disabled={isCartLoading} // Cart loading k waqt disable karein
                     >
-                        <ShoppingCart size={20} />
+                        {isCartLoading ? <Loader2 size={20} className="animate-spin" /> : <ShoppingCart size={20} />}
                     </button>
                 ) : (
-                    // Placeholder to keep alignment
                     <div className="w-[44px] h-[44px]">
                         <button
-                            className="p-3 bg-red-500 rounded-lg cursor-not-allowed"
+                            className="p-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
                             title="Out of Stock"
                             disabled
                         >
-                            <ShoppingCart size={30} />
+                            <ShoppingCart size={20} />
                         </button>
                     </div>
                 )}
 
-                {/* Remove from Wishlist Button (Wired up) */}
                 <button
                     className="p-3 bg-red-50 border border-red-300 rounded-lg text-red-600 hover:bg-red-100 transition duration-200"
                     onClick={handleRemoveFromWishlist}

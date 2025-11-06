@@ -13,11 +13,8 @@ const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // --- Zustand Store Integration ---
-  // 1. Select the total number of unique items (not total quantity) from the cart store
   const cartCount = useCartStore(state => state.items.length);
   
-  // 2. Select the total number of items from the wishlist store
   const wishlistCount = useWishlistStore(state => state.wishlistIds.length);
 
   return (

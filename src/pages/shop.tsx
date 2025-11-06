@@ -19,7 +19,7 @@ export const Shop: React.FC = () => {
         isLoading: state.isLoading,
         setFilters: state.setFilters,
         fetchProducts: state.fetchProducts,
-        totalProducts: state.totalProducts, // Get total products for display
+        totalProducts: state.totalProducts, 
     }));
 
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -28,8 +28,6 @@ export const Shop: React.FC = () => {
     // This useEffect hook should ONLY run when the 'filters' object changes.
     // The previous logic with 'catalog.length' could cause infinite loops.
     useEffect(() => {
-        // This will fetch products when the page loads
-        // AND refetch whenever 'setFilters' is called from a child component
         fetchProducts(filters);
     }, [filters, fetchProducts]); // Only depend on 'filters' and 'fetchProducts'
 

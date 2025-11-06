@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { Heart } from 'lucide-react';
 import { useProductStore } from '../../store/useProductStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 
 interface ProductCardProps {
-    productId: string; // <-- FIX: Changed from number to string
+    productId: string; // <-- FIX: ID ab string hai
     imageUrl: string;
     title: string;
     price: number;
@@ -27,6 +27,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 
+
 export const ProductCard: React.FC<ProductCardProps> = ({
     imageUrl,
     title,
@@ -34,12 +35,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     comparePrice,
     rating,
     reviewCount = 0,
-    productId // Yeh ab "6908...a78fb" jaisi string hai
+    productId
 }) => {
     const hasDiscount = comparePrice && comparePrice > price;
 
-    const isWishlisted = useWishlistStore(state => state.isWishlisted(productId)); // String ID works fine
+    // --- Wishlist Integration ---
+    const isWishlisted = useWishlistStore(state => state.isWishlisted(productId));
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
+
+    // --- Product Store Integration ---
+    // Action ko store se retrieve karein
     const fetchSingleProduct = useProductStore(state => state.fetchSingleProduct);
 
     const handleWishlistClick = (e: React.MouseEvent) => {
@@ -52,11 +57,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const handleProductClick = () => {
         // String ID k sath fetch karein
         fetchSingleProduct(productId);
+        console.log(`Pre-fetching details for product ID: ${productId}`);
     };
-
     const heartColorClass = isWishlisted
         ? 'text-red-600 fill-red-600 hover:bg-red-50'
-        : 'text-gray-700 hover:text-red-500 hover:fill-red-100 hover:border-red-300'; // Added hover state
+        : 'text-gray-400 hover:text-red-500 hover:fill-red-100'; // Not wishlisted
 
     return (
         <div className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] transform border border-gray-100 cursor-pointer">

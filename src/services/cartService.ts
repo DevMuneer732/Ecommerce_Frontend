@@ -7,7 +7,10 @@ interface AddToCartPayload {
 }
 const addItemToCart = async (payload: AddToCartPayload) => {
     const response = await api.post('/cart', {
-        payload
+        productId: payload.productId,
+        variantId: payload.variantId,
+        quantity: payload.quantity
+
     })
     return response.data;
 }
@@ -18,11 +21,12 @@ const getCart = async () => {
 }
 
 const removeItemFromCart = async (itemId: string) => {
-    const response = await api.delete(`/cart/remove/${itemId}`);
+    const response = await api.delete(`/cart/${itemId}`);
     return response.data;
 };
-const updateItemQuantity = async (payload: AddToCartPayload) => {
-    const response = await api.post('/cart/add', payload);
+const updateItemQuantity = async (itemId: string, newQuantity: number) => {
+    const response = await api.put(`/cart/${itemId}`,
+        { quantity: newQuantity });
     return response.data;
 }
 export const cartService = {

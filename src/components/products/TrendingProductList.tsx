@@ -3,11 +3,8 @@ import { useProductStore } from '../../store/useProductStore'; // Import the sto
 import { Loader2 } from 'lucide-react';
 import { ProductCard } from './productCard';
 
-// Note: The ProductData interface is no longer needed here, 
-// as the 'Product' type is inferred from the store.
 
 export const TrendingProductList: React.FC = () => {
-    // 1. Fetch data and actions from the Zustand store
     const { catalog, fetchProducts, isLoading } = useProductStore((state) => ({
         catalog: state.catalog,
         fetchProducts: state.fetchProducts,
@@ -26,7 +23,7 @@ export const TrendingProductList: React.FC = () => {
     const trendingProducts = React.useMemo(() => {
         return [...catalog]
             .sort((a, b) => b.rating - a.rating)
-            .slice(0, 4); 
+            .slice(0, 4);
     }, [catalog]);
 
     if (isLoading && catalog.length === 0) {

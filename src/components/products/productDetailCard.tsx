@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react'; // useEffect aur useMemo import karein
-import { ShoppingCart, Heart, Minus, Plus, Star } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ShoppingCart, Heart, Minus, Plus, Star, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore, CartItem } from '../../store/useCartStore'; // CartItem import karein
 import { useWishlistStore } from '../../store/useWishlistStore';
 
 // --- Types (Corrected to match Store) ---
 interface Review {
-    rating: number; comment: string; date: string; reviewerName: string; reviewerEmail?: string;
+    _id: string; rating: number; comment: string; date: string; reviewerName: string;
+    user: { _id: string; name: string; };
 }
-// Variant object (jaisa 'variants' array mein hai)
 interface Variant {
     _id: string;
     color: string;
@@ -18,23 +18,22 @@ interface Variant {
     comparePrice?: number;
     images: { public_id: string, url: string, _id: string }[];
 }
-// Product object (jaisa store se 'selectedProduct' aata hai)
 interface Product {
-    id: string; // <-- FIX: ID is string (_id)
+    id: string; 
     title: string;
     description: string;
-    price: number;
+    price: number; // Default price
     comparePrice?: number;
     rating: number;
     reviewCount: number;
-    stock: number;
-    imageUrls: string[]; // Default images (from variant[0])
+    stock: number; // Default stock
+    imageUrls: string[];
     availableColors: string[];
     availableSizes: string[];
     returnPolicy: string;
     shippingInformation: string;
     reviews: Review[];
-    variants: Variant[]; // <-- Full variants data
+    variants: Variant[]; // Full variants data
 }
 
 interface ProductDetailCardProps {
@@ -61,7 +60,7 @@ const DetailStarRating: React.FC<{ rating: number, reviewCount: number }> = ({ r
     );
 };
 
-// --- Helper Component: Review List ---
+// --- Helper Component: Review List (Placeholder) ---
 const ProductReviewList: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
     const ReviewCard: React.FC<{ review: Review }> = ({ review }) => {
         const reviewStars = Array.from({ length: 5 }, (_, index) => (
@@ -107,7 +106,6 @@ const ProductReviewList: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
 export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product }) => {
     const navigate = useNavigate();
     const productData = product;
-
     const [selectedVariant, setSelectedVariant] = useState<Variant>(productData.variants[0]);
     const [mainImage, setMainImage] = useState(productData.variants[0].images[0].url);
     const [quantity, setQuantity] = useState(1);
@@ -119,28 +117,32 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         }
         setQuantity(1);
     }, [selectedVariant]);
-
     const currentPrice = selectedVariant.price;
     const currentStock = selectedVariant.stock;
     const currentComparePrice = selectedVariant.comparePrice;
 
+    // --- (FIX 3) 'allVariantImages' - Saari unique images jama karein (Aapki Request) ---
     const allVariantImages = useMemo(() => {
         const allImages = productData.variants.flatMap(v => v.images.map(img => img.url));
         return [...new Set(allImages)];
     }, [productData.variants]);
 
 
+    // Global State Integration
     const isWishlisted = useWishlistStore(state => state.isWishlisted(productData.id));
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
-    const { addItemToCart, setBuyNowItem } = useCartStore(state => ({
+    const { addItemToCart, setBuyNowItem, isLoading } = useCartStore(state => ({
         addItemToCart: state.addItem,
         setBuyNowItem: state.setBuyNowItem,
+        isLoading: state.isLoading,
     }));
 
     const hasDiscount = currentComparePrice && currentComparePrice > currentPrice;
     const isAvailable = currentStock > 0;
 
+    // --- (FIX 4) VARIANT HANDLERS ---
     const handleColorSelect = (color: string) => {
+        // User k select kiye gaye color ka pehla available variant find karein
         const firstVariantOfColor = productData.variants.find(v => v.color === color);
         if (firstVariantOfColor) {
             setSelectedVariant(firstVariantOfColor);
@@ -148,6 +150,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
     };
 
     const handleSizeSelect = (size: string) => {
+        // User k select kiye gaye size aur *current color* ka exact variant find karein
         const variant = productData.variants.find(v =>
             v.color === selectedVariant.color && v.size === size
         );
@@ -156,34 +159,32 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         }
     };
 
+    // Sirf woh sizes show karein jo selected color k liye available hain
     const sizesForSelectedColor = useMemo(() => {
         return productData.variants
             .filter(v => v.color === selectedVariant.color)
             .map(v => v.size)
-            .filter(Boolean); 
+            .filter(Boolean); // null/undefined filter karein
     }, [selectedVariant.color, productData.variants]);
 
 
+    // --- (FIX 5) "Add to Cart" aur "Buy Now" ko naye variant data k sath update karein ---
     const handleAddToCart = () => {
-        addItemToCart({
-            id: productData.id,
-            title: productData.title,
-            price: currentPrice,
-            selectedColor: selectedVariant.color, 
-            selectedSize: selectedVariant.size,
-            quantity,
-            imageUrl: selectedVariant.images[0].url, 
-            stock: currentStock,
-        });
-        console.log(`Added ${quantity}x ${productData.title} to cart.`);
+        // Ab hum sirf IDs aur quantity bhejte hain, jaisa API ko chahiye
+        addItemToCart(
+            productData.id,      // productId (String)
+            selectedVariant._id, // variantId (String)
+            quantity
+        );
     };
 
     const handleBuyNow = () => {
+        // 'useCartStore' ka 'setBuyNowItem' function istemaal karein
         const payloadData = {
             id: productData.id,
             title: productData.title,
             price: currentPrice,
-            selectedColor: selectedVariant.color,
+            selectedColor: selectedVariant.color, // <-- Color add karein
             selectedSize: selectedVariant.size,
             quantity: quantity,
             imageUrl: selectedVariant.images[0].url,
@@ -191,9 +192,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         };
 
         setBuyNowItem(payloadData);
-        navigate('/checkout',{state:{
-            payloadData
-        }});
+        navigate('/checkout');
     };
 
     const handleImageWishlistClick = (e: React.MouseEvent) => {
@@ -299,7 +298,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 </div>
                             )}
                             {/* Size Selector */}
-                            {productData.availableSizes.length > 0 && (
+                            {sizesForSelectedColor.length > 0 && (
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Size: <span className='font-normal text-gray-600'>{selectedVariant.size}</span></h3>
                                     <div className="flex space-x-2">
@@ -341,9 +340,9 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                             <button
                                 className="flex-1 px-6 py-3 bg-blue text-white text-lg font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none flex items-center justify-center space-x-2"
                                 onClick={handleAddToCart}
-                                disabled={!isAvailable}
+                                disabled={!isAvailable || isLoading} // Loading state add karein
                             >
-                                <ShoppingCart size={20} />
+                                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <ShoppingCart size={20} />}
                                 <span>Add to Cart</span>
                             </button>
                             <button

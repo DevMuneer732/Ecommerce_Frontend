@@ -3,8 +3,8 @@ import { Tag, Loader2 } from 'lucide-react';
 import { useCartStore, CartItem } from '../../store/useCartStore';
 
 interface CheckoutSummaryProps {
-    buyNowItem: CartItem | null; // Receive the item from location state
-    totals: { // Receive calculated totals from the parent page
+    buyNowItem: CartItem | null; 
+    totals: { 
         subtotal: number;
         shipping: number;
         tax: number;

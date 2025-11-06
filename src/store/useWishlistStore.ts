@@ -1,61 +1,85 @@
 import { create } from 'zustand';
-// Import the 'persist' middleware and 'createJSONStorage' helper
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { wishlistService } from '../services/wishlistService';
+import { Product, transformApiProduct } from './useProductStore';
 
-// Define the shape of the Wishlist state
-interface WishlistState {
-    /** Array of product IDs currently in the wishlist */
-    wishlistIds: number[];
-    isWishlisted: (id: number) => boolean;
-    toggleWishlist: (id: number) => void;
-    removeFromWishlist: (id: number) => void;
+export interface WishlistItem extends Product {
 }
 
-// Use the persist middleware by wrapping the create function's callback
-export const useWishlistStore = create(
-    persist<WishlistState>(
-        // (set, get) is the standard Zustand store definition
-        (set, get) => ({
-            wishlistIds: [], // This is the initial state (will be overwritten by localStorage if it exists)
+interface WishlistState {
+    items: WishlistItem[]; 
+    wishlistIds: string[]; 
+    isLoading: boolean;
+}
 
-            isWishlisted: (id) => get().wishlistIds.includes(id),
+interface WishlistActions {
+    fetchWishlist: () => Promise<void>;
+    toggleWishlist: (productId: string) => Promise<void>; // <-- FIX: ID ab string hai
+    isWishlisted: (productId: string) => boolean; // <-- FIX: ID ab string hai
+    removeFromWishlist: (productId: string) => void; // <-- FIX: ID ab string hai
+}
 
-            toggleWishlist: (id) => {
-                set((state) => {
-                    const currentIds = state.wishlistIds;
-                    if (currentIds.includes(id)) {
-                        // Remove if already present
-                        console.log(`Removed product ${id} from wishlist.`);
-                        return { wishlistIds: currentIds.filter(itemId => itemId !== id) };
-                    } else {
-                        // Add if not present
-                        console.log(`Added product ${id} to wishlist.`);
-                        return { wishlistIds: [...currentIds, id] };
-                    }
-                });
-            },
+// --- Helper Function: API Data ko Frontend Item mein convert karein ---
+const transformApiWishlist = (wishlist: any): { items: WishlistItem[], ids: string[] } => {
+    if (!wishlist || !wishlist.products) return { items: [], ids: [] };
+    const items: WishlistItem[] = wishlist.products.map((product: any) =>
+        transformApiProduct(product)
+    );
 
-            // Action: Explicitly remove (useful for the Wishlist Page itself)
-            removeFromWishlist: (id) => {
-                set((state) => ({
-                    wishlistIds: state.wishlistIds.filter(itemId => itemId !== id)
-                }));
-            }
-        }),
-        // This is the configuration object for the 'persist' middleware
-        {
-            // 1. 'name': The key for your data in localStorage.
-            name: 'ecommerce-wishlist-storage',
+    const ids: string[] = items.map(item => item.id);
 
-            // 2. 'storage': Specify localStorage (instead of the default localStorage).
-            storage: createJSONStorage(() => localStorage),
+    return { items, ids };
+};
 
-            // 3. 'partialize': (Important) This function selects *which* parts of your state to save.
-            // We ONLY want to save the 'wishlistIds' array, not the functions.
-            partialize: (state) => ({
-                wishlistIds: state.wishlistIds
-            }),
+
+export const useWishlistStore = create<WishlistState & WishlistActions>((set, get) => ({
+    // State
+    items: [],
+    wishlistIds: [], // Shuru mein khaali
+    isLoading: false,
+
+    // --- Actions ---
+    fetchWishlist: async () => {
+        set({ isLoading: true });
+        try {
+            const response = await wishlistService.getWishlist();
+            const { items, ids } = transformApiWishlist(response.wishlist);
+            set({ items, wishlistIds: ids, isLoading: false });
+        } catch (error) {
+            console.error("Failed to fetch wishlist:", error);
+            set({ isLoading: false });
         }
-    )
-);
+    },
 
+    toggleWishlist: async (productId: string) => {
+        // Optimistic Update: UI ko foran update karein
+        const currentIds = get().wishlistIds;
+        const isWishlisted = currentIds.includes(productId);
+
+        // Fauran state update karein (sirf IDs wala array)
+        set(state => ({
+            wishlistIds: isWishlisted
+                ? state.wishlistIds.filter(id => id !== productId)
+                : [...state.wishlistIds, productId]
+        }));
+
+        try {
+            // API ko background mein call karein
+            const response = await wishlistService.toggleWishlist(productId);
+            // API k response se state ko dobara sync karein (Confirm)
+            const { items, ids } = transformApiWishlist(response.wishlist);
+            set({ items, wishlistIds: ids });
+        } catch (error) {
+            console.error("Failed to toggle wishlist:", error);
+            // Agar API fail ho, toh state ko wapas purani state par revert karein
+            set({ wishlistIds: currentIds });
+        }
+    },
+
+    isWishlisted: (productId: string) => {
+        return get().wishlistIds.includes(productId);
+    },
+
+    removeFromWishlist: (id: string) => {
+        get().toggleWishlist(id); // Sirf toggle ko call karein
+    }
+}));

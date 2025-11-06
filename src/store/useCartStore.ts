@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { cartService } from '../services/cartService'; // <-- Naya service import karein
-import { Product } from './useProductStore'; // <-- Product type ko ProductStore se import karein
 
 // --- Types ---
 export interface CartItem {
@@ -84,6 +83,7 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
         try {
             const response = await cartService.getCart();
             const transformedItems = transformApiCart(response.cart);
+
             set({ items: transformedItems, isLoading: false });
             get().calculateTotals();
         } catch (error) {
@@ -95,6 +95,7 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
     addItem: async (productId: string, variantId: string, quantity: number) => {
         set({ isLoading: true });
         try {
+
             const response = await cartService.addItemToCart({ productId, variantId, quantity });
             const transformedItems = transformApiCart(response.cart);
             set({ items: transformedItems, isLoading: false });
@@ -106,31 +107,23 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
     },
 
     updateQuantity: async (itemId: string, newQuantity: number) => {
-        set({ isLoading: true });
-        const item = get().items.find(i => i._id === itemId);
-        if (!item) {
-            set({ isLoading: false });
-            return;
-        }
-
+        set({ isLoading: true })
         try {
-            const response = await cartService.updateItemQuantity({
-                productId: item.productId,
-                variantId: item.variantId,
-                quantity: newQuantity,
-            });
+            const response = await cartService.updateItemQuantity(itemId, newQuantity);
             const transformedItems = transformApiCart(response.cart);
             set({ items: transformedItems, isLoading: false });
             get().calculateTotals();
         } catch (error) {
-            console.error("Failed to update quantity:", error);
-            set({ isLoading: false });
+            console.error('Failed to update qunatity', error);
+            set({ isLoading: false })
         }
+
     },
 
     removeItem: async (itemId: string) => {
         set({ isLoading: true });
         try {
+
             const response = await cartService.removeItemFromCart(itemId);
             const transformedItems = transformApiCart(response.cart);
             set({ items: transformedItems, isLoading: false });

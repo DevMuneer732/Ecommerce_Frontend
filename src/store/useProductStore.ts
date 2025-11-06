@@ -13,42 +13,52 @@ interface Review {
         name: string;
     };
 }
+export interface Variant { 
+    _id: string;
+    color: string;
+    size: string;
+    stock: number;
+    price: number;
+    comparePrice?: number;
+    images: { public_id: string, url: string, _id: string }[];
+}
 export interface Category {
     _id: string;
     name: string;
 }
 export interface Product {
-    id: string;
+    id: string; // _id ko id mein daalein gay
     title: string;
     description: string;
-    price: number;
-    comparePrice?: number;
+    price: number; // variant[0].price
+    comparePrice?: number; // variant[0].comparePrice
     rating: number;
-    reviewCount: number;
-    stock: number;
-    availableColors: string[];
-    availableSizes: string[];
-    imageUrls: string[];
-    category?: string;
+    reviewCount: number; // numReviews
+    stock: number; // variant[0].stock
+    availableColors: string[]; // Sab variants k unique colors
+    availableSizes: string[]; // Sab variants k unique sizes
+    imageUrls: string[]; // variant[0].images
+    category?: string; // category.name
     shippingInformation: string;
     returnPolicy: string;
     reviews: Review[];
-    variants: any[];
+    variants: any[]; // Original variants data
 }
 
+// ProductFilter interface (ab 'category' ID accept karay ga)
 export interface ProductFilter {
-    category: string[] | null;
+    category: string[] | null; // Yeh Category IDs hongay
     minPrice: number;
     maxPrice?: number;
     sortBy: 'relevance' | 'price_asc' | 'price_desc' | 'latest';
     inStockOnly: boolean;
-    page: number;
+    page: number; // Pagination k liye
 }
 
 interface ProductState {
     catalog: Product[];
     selectedProduct: Product | null;
-    categories: Category[];
+    categories: Category[]; // Categories list k liye
     filters: ProductFilter;
     currentPage: number;
     totalPages: number;
@@ -56,36 +66,20 @@ interface ProductState {
     isLoading: boolean;
     error: string | null;
     fetchProducts: (filters: Partial<ProductFilter>) => Promise<void>;
-    fetchSingleProduct: (id: number | string) => Promise<void>;
-    fetchCategories: () => Promise<void>;
+    fetchSingleProduct: (id: number | string) => Promise<void>; // <-- UNCOMMENTED
+    fetchCategories: () => Promise<void>; // <-- ADDED
     setFilters: (newFilters: Partial<ProductFilter>) => void;
 }
 
-// --- (SAB SE IMPORTANT) Data Transformation Function ---
-const transformApiProduct = (apiProduct: any): Product => {
+export const transformApiProduct = (apiProduct: any): Product => {
     const firstVariant = apiProduct.variants && apiProduct.variants.length > 0
         ? apiProduct.variants[0]
         : { price: 0, stock: 0, images: [], size: 'N/A', comparePrice: 0 };
 
-    // Sab variants k unique sizes aur colors jama karein
     const allSizes: string[] = apiProduct.variants
-        ? Array.from(
-            new Set(
-                apiProduct.variants
-                    .map((v: any) => v.size)
-                    .filter((s: any): s is string => typeof s === 'string' && s !== '')
-            )
-        )
-        : [];
+        ? Array.from(new Set(apiProduct.variants.map((v: any) => v.size).filter(Boolean))) : [];
     const allColors: string[] = apiProduct.variants
-        ? Array.from(
-            new Set(
-                apiProduct.variants
-                    .map((v: any) => v.color)
-                    .filter((c: any): c is string => typeof c === 'string' && c !== '')
-            )
-        )
-        : [];
+        ? Array.from(new Set(apiProduct.variants.map((v: any) => v.color).filter(Boolean))) : [];
 
     return {
         id: apiProduct._id,
@@ -98,7 +92,7 @@ const transformApiProduct = (apiProduct: any): Product => {
         stock: firstVariant.stock,
         imageUrls: firstVariant.images.map((img: any) => img.url),
         availableSizes: allSizes,
-        availableColors: allColors, // <-- YEH ZAROORI HAI
+        availableColors: allColors,
         category: apiProduct.category?.name || 'Uncategorized',
         shippingInformation: apiProduct.shippingInformation,
         returnPolicy: apiProduct.returnPolicy,
@@ -130,11 +124,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
     isLoading: false,
     error: null,
 
-    // --- fetchProducts (No changes needed) ---
+    // --- (UPDATED) fetchProducts ---
     fetchProducts: async (filtersToFetch) => {
         set({ isLoading: true, error: null });
         const mergedFilters = { ...get().filters, ...filtersToFetch };
-        set({ filters: mergedFilters }); // Update filters first
+        set({ filters: mergedFilters }); // Filters ko pehle update karein
 
         try {
             const response = await productService.getAllProducts(mergedFilters);
@@ -150,7 +144,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 });
             } else {
                 set((state) => ({
-                    catalog: [...state.catalog, ...transformedCatalog],
+                    catalog: [...state.catalog, ...transformedCatalog], // Load More
                     currentPage: response.currentPage,
                     totalPages: response.totalPages,
                     totalProducts: response.totalProducts,
@@ -182,7 +176,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         }
     },
 
-    // --- fetchCategories (No changes needed) ---
+    // --- (NEW) fetchCategories ---
     fetchCategories: async () => {
         try {
             if (get().categories.length > 0) return;
