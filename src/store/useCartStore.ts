@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { cartService } from '../services/cartService'; // <-- Naya service import karein
-
+import { couponService } from '../services/couponService';
 // --- Types ---
 export interface CartItem {
     _id: string; // Cart Item ki unique DB ID
@@ -31,7 +31,7 @@ interface CartActions {
     fetchCart: () => Promise<void>; // Naya action
     addItem: (productId: string, variantId: string, quantity: number) => Promise<void>; // Updated
     updateQuantity: (itemId: string, newQuantity: number) => Promise<void>; // Updated
-    removeItem: (itemId: string) => Promise<void>; // Updated
+    removeItem: (itemId: string) => Promise<any>; // Updated
     applyCoupon: (code: string, subtotal: number) => Promise<void>;
     clearCart: () => void;
     calculateTotals: () => void;
@@ -75,8 +75,6 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
     shipping: 0,
     orderTotal: 0,
     isLoading: false,
-
-    // --- Actions ---
 
     fetchCart: async () => {
         set({ isLoading: true });
@@ -145,12 +143,25 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
         });
     },
 
-    applyCoupon: async (code, subtotal) => {
-        // ... (coupon logic) ...
+    applyCoupon: async (code: string) => {
+        try {
+            const response = await couponService.applyCoupon(code);
+            set({
+                couponCode: response.discountInfo.code,
+                discountAmount: Number(response.discountInfo.discountAmount),
+                isCouponValid: true,
+            });
+
+            get().calculateTotals(); // Discount k baad totals recalculate karein
+            return response; // Success response return karein
+        } catch (error) {
+            set({ couponCode: code.toUpperCase(), discountAmount: 0, isCouponValid: false });
+            get().calculateTotals(); // Totals ko reset karein
+            throw error;
+        }
     },
 
     clearCart: () => {
-        // TODO: Add API call to clear cart in DB
         set({
             items: [], couponCode: null, discountAmount: 0,
             isCouponValid: false, subtotal: 0, shipping: 0, orderTotal: 0,

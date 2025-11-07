@@ -26,17 +26,19 @@ const ReviewCard: React.FC<{ review: Review }> = ({ review }) => {
 
     return (
         <div className="border-b border-gray-200 py-6">
-            <div className="flex items-center mb-2">
+            <div className="flex flex-col gap-2 mb-2">
                 <div className="flex items-center">{stars}</div>
-                <span className="ml-2 text-sm font-semibold text-gray-800">{review.reviewerName}</span>
+                <p className="text-sm font-semibold text-gray-800">
+                    {review.reviewerName.charAt(0).toUpperCase() + review.reviewerName.slice(1)}
+                </p>
             </div>
-            <p className="text-sm text-gray-500 mb-3">
+            {/* <p className="text-sm text-gray-500 mb-3">
                 {new Date(review.date).toLocaleDateString("en-US", {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                 })}
-            </p>
+            </p> */}
             <p className="text-base text-gray-700 leading-relaxed">{review.comment}</p>
         </div>
     );

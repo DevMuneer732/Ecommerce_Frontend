@@ -1,11 +1,12 @@
-import React from 'react';
-import { FormikProps } from 'formik'; // Import FormikProps
+import React, { useEffect } from 'react'; // <-- useEffect import karein
+import { FormikProps } from 'formik';
 import { User, Home, Phone, Mail } from 'lucide-react';
 import { CheckoutPageValues } from '../../pages/checkOut';
+import { useUserStore } from '../../store/user'; // <-- User store import karein
 
 interface CheckoutFormProps {
-    // Receives the main Formik instance from the parent
-    formik: FormikProps<CheckoutPageValues>; 
+    // Parent se Formik instance receive karein
+    formik: FormikProps<CheckoutPageValues>;
 }
 
 // Helper function for input styling
@@ -18,10 +19,32 @@ const getInputClasses = (formik: FormikProps<CheckoutPageValues>, field: keyof C
 };
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({ formik }) => {
-    // Formik instance is now controlled by the parent (CheckoutPage)
-    
+
+    // --- (FIX 1) ---
+    // Store se 'user' object hasil karein
+    const user = useUserStore((state) => state.user);
+
+    // (FIX 2) Navigation logic yahan se hata dein.
+    // Woh CheckoutPage.tsx mein chala gaya hai.
+
+    // --- (FIX 3) ---
+    // useEffect ka istemaal karein taake jab 'user' load ho, form update ho jaye
+    useEffect(() => {
+        // 'enableReinitialize' (jo parent mein set hai) 
+        // ki wajah se initialValues update honay par Formik auto-update ho jayega.
+        // Lekin hum yahan manually bhi kar saktay hain (zyada safe hai).
+        if (user) {
+            formik.setValues((values) => ({
+                ...values, // Puranay values (like streetAddress) ko barqarar rakhein
+                fullName: user.name || '', // Store se fullName set karein
+                email: user.email || '',       // Store se email set karein
+            }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]); // Yeh effect tab chalay ga jab 'user' object load ya change hoga
+
     return (
-        // The <form> tag is now in the parent (CheckoutPage)
+        // The <form> tag ab parent (CheckoutPage) mein hai
         <div className="space-y-5">
             {/* Full Name Field */}
             <div>

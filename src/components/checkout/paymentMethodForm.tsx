@@ -4,7 +4,7 @@ import { FormikProps } from 'formik'; // Import FormikProps
 import { CheckoutPageValues } from '../../pages/checkOut';
 
 // Define the available payment methods
-export type PaymentMethod = 'cod' | 'bank' | 'card';
+export type PaymentMethod = 'cod';
 
 interface PaymentMethodFormProps {
     // Receive the main Formik instance from the parent

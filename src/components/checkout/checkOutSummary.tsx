@@ -3,8 +3,8 @@ import { Tag, Loader2 } from 'lucide-react';
 import { useCartStore, CartItem } from '../../store/useCartStore';
 
 interface CheckoutSummaryProps {
-    buyNowItem: CartItem | null; 
-    totals: { 
+    buyNowItem: CartItem | null;
+    totals: {
         subtotal: number;
         shipping: number;
         tax: number;
@@ -13,24 +13,27 @@ interface CheckoutSummaryProps {
 }
 
 export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, totals }) => {
-    // --- Get data/actions from the Zustand Store ---
-    // We only need the 'items' for the full cart flow, and coupon logic
+
     const {
         items: cartItems,
         discountAmount,
         isCouponValid,
         couponCode,
         applyCoupon,
-        taxRate, // Get tax rate for display
-    } = useCartStore();
+        taxRate,
+    } = useCartStore((state) => ({
+        items: state.items,
+        discountAmount: state.discountAmount,
+        isCouponValid: state.isCouponValid,
+        couponCode: state.couponCode,
+        applyCoupon: state.applyCoupon,
+        taxRate: state.taxRate,
+    }));
 
-    // Determine which flow is active
     const isBuyNowFlow = !!buyNowItem;
-    // Determine which items to show in the list
     const itemsToShow = isBuyNowFlow ? [buyNowItem!] : cartItems;
 
-    // Local UI state for coupon input
-    const [couponInput, setCouponInput] = useState(couponCode || '');
+    const [couponInput, setCouponInput] = useState('');
     const [isApplying, setIsApplying] = useState(false);
     const [couponError, setCouponError] = useState('');
 
@@ -45,16 +48,22 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
         setIsApplying(true);
         setCouponError('');
 
-        // Pass the current subtotal (local or store) to the applyCoupon action
-        await applyCoupon(code, totals.subtotal);
+        try {
+            // --- (FIX) ---
+            // Ab humein subtotal pass karnay ki zaroorat nahi
+            await applyCoupon(code, subtotal)
+            // --- END FIX ---
 
-        const storeState = useCartStore.getState();
-        if (!storeState.isCouponValid && storeState.couponCode === code.toUpperCase()) {
-            setCouponError('Invalid, expired, or already used coupon code.');
-        } else {
             setCouponInput('');
+        } catch (error: any) {
+            if (error.response) {
+                setCouponError(error.response.data.message || 'Invalid coupon code.');
+            } else {
+                setCouponError('Failed to apply coupon.');
+            }
+        } finally {
+            setIsApplying(false);
         }
-        setIsApplying(false);
     };
 
     const getInputClasses = (error: string) => {
@@ -63,9 +72,10 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
         return `${base} border-gray-300 focus:border-blue-500 focus:ring-blue-100`;
     };
 
+    // Use 'isCouponValid' (jo store se aa raha hai) to show the applied coupon
     const displayCode = isCouponValid ? couponCode : null;
 
-    // Use the totals passed via props
+    // Totals ab props se aa rahay hain
     const { subtotal, shipping, tax, orderTotal } = totals;
 
     return (
@@ -75,7 +85,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                 {isBuyNowFlow ? 'Item to Buy' : 'Order Summary'}
             </h2>
 
-            {/* --- 1. ITEM LIST SECTION (NOW DYNAMIC) --- */}
+            {/* --- 1. ITEM LIST SECTION --- */}
             <div className="border-t border-b border-gray-200 divide-y divide-gray-200">
                 <div className="max-h-64 overflow-y-auto pr-2">
                     {itemsToShow.map(item => (
@@ -87,7 +97,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                             />
                             <div className="ml-4 flex-grow">
                                 <p className="text-sm font-semibold text-gray-800 line-clamp-2">{item.title}</p>
-                                <p className="text-xs text-gray-500">Size: {item.selectedSize}</p>
+                                <p className="text-xs text-gray-500">Size: {item.selectedSize}, Color: {item.selectedColor}</p>
                                 <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                             </div>
                             <div className="text-sm font-bold text-gray-900">
@@ -116,7 +126,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                     <button
                         onClick={handleApplyCoupon}
                         disabled={!couponInput.trim() || isApplying || !!displayCode}
-                        className="flex items-center justify-center cursor-pointer px-4 py-2 bg-blue text-white text-sm font-semibold rounded-r-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                        className="flex items-center justify-center cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-r-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
                     >
                         {isApplying ? (
                             <Loader2 size={16} className="animate-spin" />
@@ -138,7 +148,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                 )}
             </div>
 
-            {/* --- 3. FINANCIAL TOTALS --- */}
+            {/* --- 3. FINANCIAL TOTALS (Using Props) --- */}
             <div className="space-y-2 text-gray-700 text-sm border-t pt-4">
                 <div className="flex justify-between">
                     <span>Subtotal</span>
@@ -161,7 +171,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                 )}
             </div>
 
-            {/* --- Order Total --- */}
+            {/* --- Order Total (Using Props) --- */}
             <div className="flex justify-between items-center mt-4 border-t border-gray-300 pt-4">
                 <span className="text-lg font-bold text-gray-900">Order Total</span>
                 <span className="text-xl font-extrabold text-gray-900">{formatPrice(orderTotal)}</span>

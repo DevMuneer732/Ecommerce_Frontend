@@ -3,6 +3,7 @@ import { ShoppingCart, Heart, Minus, Plus, Star, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore, CartItem } from '../../store/useCartStore'; // CartItem import karein
 import { useWishlistStore } from '../../store/useWishlistStore';
+import { ProductReviewList } from './productReviewList';
 
 // --- Types (Corrected to match Store) ---
 interface Review {
@@ -19,7 +20,7 @@ interface Variant {
     images: { public_id: string, url: string, _id: string }[];
 }
 interface Product {
-    id: string; 
+    id: string;
     title: string;
     description: string;
     price: number; // Default price
@@ -56,49 +57,6 @@ const DetailStarRating: React.FC<{ rating: number, reviewCount: number }> = ({ r
             <span className="ml-2 text-sm text-gray-500 font-medium">
                 ({rating.toFixed(1)} / {reviewCount} reviews)
             </span>
-        </div>
-    );
-};
-
-// --- Helper Component: Review List (Placeholder) ---
-const ProductReviewList: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
-    const ReviewCard: React.FC<{ review: Review }> = ({ review }) => {
-        const reviewStars = Array.from({ length: 5 }, (_, index) => (
-            <Star
-                key={index}
-                className={`h-5 w-5 ${index < review.rating ? 'text-amber-400' : 'text-gray-300'} fill-current`}
-                aria-hidden="true"
-            />
-        ));
-        return (
-            <div className="border-b border-gray-200 py-6">
-                <div className="flex items-center mb-2">
-                    <div className="flex items-center">{reviewStars}</div>
-                    <span className="ml-3 text-sm font-semibold text-gray-800">{review.reviewerName}</span>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">
-                    {new Date(review.date).toLocaleDateString("en-US", {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    })}
-                </p>
-                <p className="text-base text-gray-700 leading-relaxed">{review.comment}</p>
-            </div>
-        );
-    };
-
-    return (
-        <div className="mt-6">
-            {reviews && reviews.length > 0 ? (
-                <div className="space-y-6">
-                    {reviews.map((review, index) => (
-                        <ReviewCard key={index} review={review} />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center p-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-600 font-medium">No reviews yet.</p>
-                </div>
-            )}
         </div>
     );
 };
@@ -192,7 +150,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         };
 
         setBuyNowItem(payloadData);
-        navigate('/checkout');
+        navigate('/checkout', { state: setBuyNowItem });
     };
 
     const handleImageWishlistClick = (e: React.MouseEvent) => {

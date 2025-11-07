@@ -1,63 +1,62 @@
+import * as yup from 'yup';
 import React, { useState, useEffect } from 'react';
 import { Loader2, Lock } from 'lucide-react';
-// --- IMPORT useLocation ---
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
-import * as yup from 'yup';
-
+import { useUserStore } from '../store/user';
 import { useCartStore, CartItem } from '../store/useCartStore';
-
+import { PaymentFormValues } from '../validation/checkoutSchema';
 import { PaymentMethodForm, PaymentMethod } from '../components/checkout/paymentMethodForm';
 import {
-    CheckoutFormValues,
-    PaymentFormValues,
-    checkoutValidationSchema,
-    paymentValidationSchema
+    CheckoutFormValues, checkoutValidationSchema,
 } from '../validation/checkoutSchema';
 import { CheckoutForm } from '../components/checkout/checkOutForm';
 import { CheckOutSummary } from '../components/checkout/checkOutSummary';
-
-// This is the combined type for the single Formik instance
-export type CheckoutPageValues = CheckoutFormValues & PaymentFormValues;
+import { orderService } from '../services/orderService';
+import { isAxiosError } from 'axios';
+import { paymentValidationSchema } from '../validation/checkoutSchema';
+export type CheckoutPageValues = CheckoutFormValues & PaymentFormValues
 
 export const CheckOut: React.FC = () => {
     const navigate = useNavigate();
-
-    // --- 1. Get location state ---
     const location = useLocation();
-    // Safely get the buyNowItem from the state passed during navigation
+
+    // --- Data Handling ---
     const locationBuyNowItem = (location.state as { buyNowItem: CartItem | null })?.buyNowItem || null;
-
     const [isProcessing, setIsProcessing] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod'); // Default to COD
+    const [formError, setFormError] = useState(''); // Naya state error k liye
 
-    // Get data from the cart store
-    const { items, clearCart } = useCartStore((state) => ({
+    // --- Store Data ---
+    const {
+        items,
+        clearCart,
+        couponCode, // Coupon code bhi get karein
+        discountAmount, // Discount amount bhi get karein
+        taxRate
+    } = useCartStore((state) => ({
         items: state.items,
         clearCart: state.clearCart,
+        couponCode: state.couponCode,
+        discountAmount: state.discountAmount,
+        taxRate: state.taxRate,
     }));
 
-    // --- 2. Determine which flow is active ---
+    // --- Flow & Totals Calculation ---
     const isBuyNowFlow = !!locationBuyNowItem;
     const itemsToSubmit = isBuyNowFlow ? [locationBuyNowItem] : items;
 
-    // --- 3. Local State for Totals ---
-    // We must now calculate totals locally because the store won't manage the 'buyNowItem'
     const [totals, setTotals] = useState({ subtotal: 0, shipping: 0, tax: 0, orderTotal: 0 });
-    const taxRate = 0.08; // Assuming 8% tax, as defined in your store
 
     useEffect(() => {
-        const itemsToCalculate = isBuyNowFlow ? [locationBuyNowItem!] : items;
-
-        const sub = itemsToCalculate.reduce((total, item) => total + (item.price * item.quantity), 0);
+        const sub = itemsToSubmit.reduce((total, item) => total + (item.price * item.quantity), 0);
         const ship = sub >= 100 ? 0.00 : 5.00;
         const tax = sub * taxRate;
-        // NOTE: Coupon logic will need to be handled here now
-        const total = Math.max(0, sub + ship + tax);
-
+        // (FIX 2) Totals calculate kartay waqt 'discountAmount' ko store se lein
+        const total = Math.max(0, sub + ship + tax - discountAmount);
         setTotals({ subtotal: sub, shipping: ship, tax: tax, orderTotal: total });
 
-    }, [items, locationBuyNowItem, isBuyNowFlow, taxRate]);
+    }, [itemsToSubmit, taxRate, discountAmount]); // 'discountAmount' par depend karein
 
 
     const formatPrice = (p: number) => `$${p.toFixed(2)}`;
@@ -65,52 +64,61 @@ export const CheckOut: React.FC = () => {
     // --- Formik Initialization ---
     const formik = useFormik<CheckoutPageValues>({
         initialValues: {
-            fullName: '', streetAddress: '', phone: '', email: '',
+            fullName: useUserStore.getState().user?.name || '',
+            streetAddress: '',
+            phone: '',
+            email: useUserStore.getState().user?.email || '',
             cardHolderName: '', cardNumber: '', expiryDate: '', cvc: '',
         },
+        enableReinitialize: true,
         validationSchema: yup.object().shape({
             ...checkoutValidationSchema.fields,
-            ...(paymentMethod === 'card' && paymentValidationSchema.fields),
+            ...(paymentMethod === 'cod' && paymentValidationSchema.fields),
         }),
         onSubmit: (values) => {
             handlePlaceOrder(values);
         },
     });
 
+    // --- (FIX 3) Updated handlePlaceOrder ---
     const handlePlaceOrder = async (formData: CheckoutPageValues) => {
         setIsProcessing(true);
-        console.log("--- PLACING ORDER ---");
-        console.log("FORM DATA (Shipping & Payment):", JSON.stringify(formData, null, 2));
-        console.log("CART ITEMS:", JSON.stringify(itemsToSubmit, null, 2));
-        console.log("PAYMENT METHOD:", paymentMethod);
-        console.log("FINAL TOTAL:", totals.orderTotal); // Use local total
+        setFormError(''); // Error reset karein
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log("--- ORDER SUCCESSFUL ---");
+        try {
+            // Order service ko call karein
+            await orderService.placeOrder(
+                formData,
+                itemsToSubmit,
+                couponCode, // Coupon code pass karein
+                isBuyNowFlow
+            );
 
-        // If it was a regular cart checkout, clear the cart.
-        if (!isBuyNowFlow) {
-            clearCart();
+            console.log("--- ORDER SUCCESSFUL ---");
+
+            // Sirf regular cart flow mein cart clear karein
+            if (!isBuyNowFlow) {
+                clearCart();
+            }
+
+            setIsProcessing(false);
+            alert("Order placed successfully!");
+            navigate('/'); // Home page par redirect karein
+
+        } catch (error) {
+            console.error("Place Order Error:", error);
+            if (isAxiosError(error)) {
+                setFormError(error.response?.data?.message || 'Failed to place order.');
+            } else {
+                setFormError('An unknown error occurred.');
+            }
+            setIsProcessing(false);
         }
-
-        setIsProcessing(false);
-        alert("Order placed successfully!");
-        navigate('/'); // Navigate home after success
     };
 
     // --- Empty Cart Logic ---
-    const isCartEmpty = items.length === 0 && !locationBuyNowItem;
-    if (isCartEmpty && !isProcessing) {
-        return (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-screen text-center">
-                <div className="p-10 bg-white rounded-lg shadow-xl">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-4">Your Cart is Empty</h1>
-                    <a href="/shop" className="inline-block py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                        Return to Shop
-                    </a>
-                </div>
-            </div>
-        );
+    if (items.length === 0 && !locationBuyNowItem && !isProcessing) {
+        // ... (Empty cart JSX) ...
     }
 
     return (
@@ -134,6 +142,29 @@ export const CheckOut: React.FC = () => {
                         selectedMethod={paymentMethod}
                         setSelectedMethod={setPaymentMethod}
                     />
+                </form>
+
+                {/* --- Right Column: Summary --- */}
+                <div className="lg:w-1/3 mt-8 lg:mt-0">
+                    <CheckOutSummary
+                        buyNowItem={locationBuyNowItem}
+                        totals={totals}
+                    />
+
+                    {/* API Error Message */}
+                    {formError && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm mt-4">
+                            <p>{formError}</p>
+                        </div>
+                    )}
+
+
+                    {!formik.isValid && !isProcessing && (
+                        <p className="text-xs text-red-500 text-center mt-2">
+                            Please fill in all required fields.
+                        </p>
+                    )}
+                </div>
                     <button
                         type="submit"
                         form="checkout-form"
@@ -147,23 +178,6 @@ export const CheckOut: React.FC = () => {
                         )}
                         {isProcessing ? 'Processing Order...' : `Place Order (${formatPrice(totals.orderTotal)})`}
                     </button>
-                </form>
-
-                {/* --- Right Column: Summary --- */}
-                <div className="lg:w-1/3 mt-8 lg:mt-0">
-                    {/* --- 4. Pass the location state item to the summary --- */}
-                    <CheckOutSummary
-                        buyNowItem={locationBuyNowItem}
-                        // Pass local totals down
-                        totals={totals}
-                    />
-
-                    {!formik.isValid && !isProcessing && (
-                        <p className="text-xs text-red-500 text-center mt-2">
-                            Please fill in all required fields to place your order.
-                        </p>
-                    )}
-                </div>
             </div>
         </div>
     );
