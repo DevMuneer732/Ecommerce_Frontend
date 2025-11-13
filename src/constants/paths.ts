@@ -10,5 +10,7 @@ export const routePaths = {
   ForgotPassword:'/forgot-password',
   Shop:'/shop',
   ProductDetail: '/shop/:productId', 
-  CheckOut:'/checkout'
+  CheckOut:'/checkout',
+  MyOrders:'/my-orders',
+  OrderDetails:'/my-orders/:orderId',
 } as const;

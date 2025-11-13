@@ -26,8 +26,7 @@ export const CartSummary: React.FC = () => {
 
             {/* Checkout Button */}
             <button
-                // --- FIX: Changed 'bg-blue' to 'bg-blue-600' for standard Tailwind ---
-                className="w-full mt-4 py-3 px-4 bg-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                className="w-full mt-4 py-3 px-4 bg-sky-500 text-white font-semibold rounded-lg hover:bg-sky-600 transition-all duration-200"
                 onClick={() => navigate('/checkout')} // Navigates to the page with the full summary
             >
                 Checkout

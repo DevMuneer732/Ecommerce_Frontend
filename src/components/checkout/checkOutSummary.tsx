@@ -15,7 +15,7 @@ interface CheckoutSummaryProps {
 export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, totals }) => {
 
     const {
-        items: cartItems,
+        items,
         discountAmount,
         isCouponValid,
         couponCode,
@@ -31,7 +31,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
     }));
 
     const isBuyNowFlow = !!buyNowItem;
-    const itemsToShow = isBuyNowFlow ? [buyNowItem!] : cartItems;
+    const itemsToShow = isBuyNowFlow ? [buyNowItem!] : items;
 
     const [couponInput, setCouponInput] = useState('');
     const [isApplying, setIsApplying] = useState(false);
@@ -49,10 +49,8 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
         setCouponError('');
 
         try {
-            // --- (FIX) ---
-            // Ab humein subtotal pass karnay ki zaroorat nahi
-            await applyCoupon(code, subtotal)
-            // --- END FIX ---
+            // Call the store's applyCoupon (store recalculates totals)
+            await applyCoupon(code);
 
             setCouponInput('');
         } catch (error: any) {
@@ -126,7 +124,7 @@ export const CheckOutSummary: React.FC<CheckoutSummaryProps> = ({ buyNowItem, to
                     <button
                         onClick={handleApplyCoupon}
                         disabled={!couponInput.trim() || isApplying || !!displayCode}
-                        className="flex items-center justify-center cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-r-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                        className="flex items-center justify-center cursor-pointer px-4 py-2 bg-gray-400 text-white text-sm font-semibold rounded-r-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
                     >
                         {isApplying ? (
                             <Loader2 size={16} className="animate-spin" />

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { cartService } from '../services/cartService'; // <-- Naya service import karein
 import { couponService } from '../services/couponService';
-// --- Types ---
+import { toast } from 'react-hot-toast';
 export interface CartItem {
     _id: string; // Cart Item ki unique DB ID
     productId: string;
@@ -32,7 +32,7 @@ interface CartActions {
     addItem: (productId: string, variantId: string, quantity: number) => Promise<void>; // Updated
     updateQuantity: (itemId: string, newQuantity: number) => Promise<void>; // Updated
     removeItem: (itemId: string) => Promise<any>; // Updated
-    applyCoupon: (code: string, subtotal: number) => Promise<void>;
+    applyCoupon: (code: string) => Promise<any>;
     clearCart: () => void;
     calculateTotals: () => void;
 }
@@ -98,9 +98,10 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
             const transformedItems = transformApiCart(response.cart);
             set({ items: transformedItems, isLoading: false });
             get().calculateTotals();
+            toast.success("Item added to cart!")
         } catch (error) {
-            console.error("Failed to add item:", error);
             set({ isLoading: false });
+            toast.error("Failed to add item to cart.")
         }
     },
 
@@ -126,9 +127,11 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
             const transformedItems = transformApiCart(response.cart);
             set({ items: transformedItems, isLoading: false });
             get().calculateTotals();
+            toast.success("Item removed from cart.")
         } catch (error) {
             console.error("Failed to remove item:", error);
             set({ isLoading: false });
+            toast.error("Failed to remove item from cart.")
         }
     },
 
@@ -151,12 +154,13 @@ export const useCartStore = create<CartState & CartActions>((set, get) => ({
                 discountAmount: Number(response.discountInfo.discountAmount),
                 isCouponValid: true,
             });
-
-            get().calculateTotals(); // Discount k baad totals recalculate karein
-            return response; // Success response return karein
+            get().calculateTotals(); 
+            toast.success("Coupon applied successfully!")
+            return response; 
         } catch (error) {
             set({ couponCode: code.toUpperCase(), discountAmount: 0, isCouponValid: false });
-            get().calculateTotals(); // Totals ko reset karein
+            get().calculateTotals(); 
+            toast.error("Invalid Coupon code.")
             throw error;
         }
     },

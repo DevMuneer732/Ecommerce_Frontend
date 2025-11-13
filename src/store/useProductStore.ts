@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { productService } from '../services/productService';
 
-// --- Shared Product and Filter Interfaces ---
 interface Review {
     _id: string;
     rating: number;

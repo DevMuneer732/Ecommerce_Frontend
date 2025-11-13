@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { Heart } from 'lucide-react';
 import { useProductStore } from '../../store/useProductStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
+import { useUserStore } from '../../store/user';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface ProductCardProps {
     productId: string; // <-- FIX: ID ab string hai
@@ -38,10 +40,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     productId
 }) => {
     const hasDiscount = comparePrice && comparePrice > price;
-
+    const navigate = useNavigate()
     // --- Wishlist Integration ---
     const isWishlisted = useWishlistStore(state => state.isWishlisted(productId));
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
+    const isLoggedIn = useUserStore(state => state.isLoggedIn)
 
     // --- Product Store Integration ---
     // Action ko store se retrieve karein
@@ -50,6 +53,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const handleWishlistClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!isLoggedIn) {
+            navigate('/login');
+            return;
+        }
         toggleWishlist(productId);
     };
 
@@ -68,13 +75,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             <div className="relative h-48 overflow-hidden bg-gray-50">
                 {/* Click handler add karein */}
-                <a href={`/shop/${productId}`} className='block h-full' onClick={handleProductClick}>
+                <Link to={`/shop/${productId}`} className='block h-full' onClick={handleProductClick}>
                     <img
                         src={imageUrl}
                         alt={title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                </a>
+                </Link>
             </div>
 
             <div className="p-4">
@@ -102,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                 <h3 className="text-lg font-medium text-gray-800 mb-1 line-clamp-2 transition hover:text-blue-600">
                     {/* Click handler add karein */}
-                    <a href={`/shop/${productId}`} onClick={handleProductClick}>{title}</a>
+                    <Link to={`/shop/${productId}`} onClick={handleProductClick}>{title}</Link>
                 </h3>
 
                 <div className="flex justify-start items-center">

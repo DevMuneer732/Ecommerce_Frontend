@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { wishlistService } from '../services/wishlistService';
 import { Product, transformApiProduct } from './useProductStore';
-
+import { toast } from "react-hot-toast";
 export interface WishlistItem extends Product {
 }
 
 interface WishlistState {
-    items: WishlistItem[]; 
-    wishlistIds: string[]; 
+    items: WishlistItem[];
+    wishlistIds: string[];
     isLoading: boolean;
 }
 
@@ -51,27 +51,35 @@ export const useWishlistStore = create<WishlistState & WishlistActions>((set, ge
     },
 
     toggleWishlist: async (productId: string) => {
-        // Optimistic Update: UI ko foran update karein
+        // 2. Check karein ke item pehle se list mein tha ya nahin
         const currentIds = get().wishlistIds;
-        const isWishlisted = currentIds.includes(productId);
+        const wasWishlisted = currentIds.includes(productId);
 
-        // Fauran state update karein (sirf IDs wala array)
+        // Optimistic Update (UI foran update karein)
         set(state => ({
-            wishlistIds: isWishlisted
+            wishlistIds: wasWishlisted
                 ? state.wishlistIds.filter(id => id !== productId)
                 : [...state.wishlistIds, productId]
         }));
 
         try {
-            // API ko background mein call karein
+            // API call karein
             const response = await wishlistService.toggleWishlist(productId);
-            // API k response se state ko dobara sync karein (Confirm)
+            // API se state ko sync karein
             const { items, ids } = transformApiWishlist(response.wishlist);
             set({ items, wishlistIds: ids });
+
+            // --- 3. TOAST ADDED (Success) ---
+            if (wasWishlisted) {
+                toast.success('Removed from wishlist');
+            } else {
+                toast.success('Added to wishlist');
+            }
+
         } catch (error) {
             console.error("Failed to toggle wishlist:", error);
-            // Agar API fail ho, toh state ko wapas purani state par revert karein
             set({ wishlistIds: currentIds });
+            toast.error('Wishlist update failed!');
         }
     },
 
@@ -80,6 +88,6 @@ export const useWishlistStore = create<WishlistState & WishlistActions>((set, ge
     },
 
     removeFromWishlist: (id: string) => {
-        get().toggleWishlist(id); // Sirf toggle ko call karein
+        get().toggleWishlist(id);
     }
 }));

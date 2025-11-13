@@ -23,7 +23,9 @@ export const checkoutValidationSchema = yup.object<CheckoutFormValues>().shape({
         .required('Phone number is required'),
     email: yup
         .string()
+        .transform((value) => (value === '' ? undefined : value))
         .email('Enter a valid email')
+        .optional(),
 });
 
 // --- Payment Details ---
@@ -46,7 +48,7 @@ export const paymentValidationSchema = yup.object<PaymentFormValues>().shape({
     expiryDate: yup
         .string()
         // Regex for MM/YY format
-        .matches(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/, 'Must be in MM/YY format (e.g., 05/28)') 
+        .matches(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/, 'Must be in MM/YY format (e.g., 05/28)')
         .required('Expiry Date is Required'),
     cvc: yup
         .string()

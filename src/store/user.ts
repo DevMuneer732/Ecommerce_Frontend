@@ -1,6 +1,6 @@
 import { devtools, persist } from 'zustand/middleware';
 import { create } from 'zustand';
-
+import { toast } from "react-hot-toast"
 import type { TUserStore } from '../types/user';
 import type { RegisterValues, LoginValues } from '../validation/authSchemas';
 import { authService } from '../services/authService';
@@ -21,28 +21,38 @@ export const useUserStore = create<TUserStore>()(
         },
 
         register: async (values: RegisterValues) => {
-          const responseData = await authService.register(values);
+          try {
+            const responseData = await authService.register(values);
+            set({ user: responseData.user, isLoggedIn: false });
 
-          set({ user: responseData.user, isLoggedIn: false });
-          
-          return responseData;
+            // --- TOAST ADDED ---
+            toast.success('Registration successful! Please log in.');
 
+            return responseData;
+
+          } catch (error: any) {
+            console.error("Registration failed:", error);
+            toast.error(error.message || 'Registration failed.');
+            throw error; 
+          }
         },
 
         login: async (values: LoginValues) => {
           // 1. Call the API service
-          const responseData = await authService.login(values);
-
-          // 2. Update the state
-          set({ user: responseData.user, isLoggedIn: true });
-
-          // 3. Set the auth token for future API calls
-          if (responseData.token) {
-            localStorage.setItem('token', responseData.token);
-            api.defaults.headers.common['Authorization'] = `Bearer ${responseData.token}`;
+          try {
+            const responseData = await authService.login(values);
+            set({ user: responseData.user, isLoggedIn: true });
+            if (responseData.token) {
+              localStorage.setItem('token', responseData.token);
+              api.defaults.headers.common['Authorization'] = `Bearer ${responseData.token}`;
+            }
+            toast.success(`Login Successfully!`);
+            return responseData;
+          } catch (error: any) {
+            console.error("Login failed:", error);
+            toast.error(error.message || 'Invalid credentials.');
+            throw error; 
           }
-
-          return responseData;
         },
 
       }),

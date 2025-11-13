@@ -1,3 +1,4 @@
+import { MyOrdersPage } from '../pages/my-orders';
 import { routePaths } from '../constants/paths';
 import { Cart } from '../pages/cart';
 import { CheckOut } from '../pages/checkOut';
@@ -23,5 +24,11 @@ export const privateRoutes: TRoute[] = [
         component: Wish,
         exact: true,
     },
-
+    {
+        name: 'MyOrders',
+        path: routePaths.MyOrders,
+        component: MyOrdersPage,
+        exact: true
+    }
+    
 ];

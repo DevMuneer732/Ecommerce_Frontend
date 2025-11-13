@@ -4,7 +4,6 @@ import { ShoppingCart, Trash, Loader2 } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { Product } from '../../store/useProductStore';
-// This interface must match the object being passed from Wishlist.tsx
 interface WishlistItemCardProps {
     item: Product
 }
@@ -24,7 +23,6 @@ export const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ item }) => {
     };
 
     const handleMoveToCart = () => {
-        // Pehla variant cart mein add karein
         const firstVariant = item.variants[0];
         if (firstVariant) {
             addItemToCart(
@@ -32,7 +30,6 @@ export const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ item }) => {
                 firstVariant._id, 
                 1                 
             );
-            toggleWishlist(item.id);
         } else {
             console.error("Cannot move to cart: Product has no variants.");
         }
@@ -67,7 +64,7 @@ export const WishlistItemCard: React.FC<WishlistItemCardProps> = ({ item }) => {
                         className="p-3 bg-gray-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-md"
                         onClick={handleMoveToCart}
                         title="Add to Cart"
-                        disabled={isCartLoading} // Cart loading k waqt disable karein
+                        disabled={isCartLoading} 
                     >
                         {isCartLoading ? <Loader2 size={20} className="animate-spin" /> : <ShoppingCart size={20} />}
                     </button>

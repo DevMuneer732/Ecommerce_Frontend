@@ -19,12 +19,10 @@ export const CartItemCart: React.FC<CartItemCardProps> = ({ item }) => {
 
     const handleQuantityChange = (delta: number) => {
         const newQuantity = item.quantity + delta;
-        // 'updateQuantity' ko item _id aur nayi quantity pass karein
         updateQuantity(item._id, newQuantity);
     };
 
     const handleRemoveItem = () => {
-        // 'removeItem' ko item _id pass karein
         removeItem(item._id);
     };
 

@@ -20,24 +20,14 @@ const getInputClasses = (formik: FormikProps<CheckoutPageValues>, field: keyof C
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({ formik }) => {
 
-    // --- (FIX 1) ---
-    // Store se 'user' object hasil karein
-    const user = useUserStore((state) => state.user);
+    const user = useUserStore((state) => state.user); // <-- SAHI
 
-    // (FIX 2) Navigation logic yahan se hata dein.
-    // Woh CheckoutPage.tsx mein chala gaya hai.
-
-    // --- (FIX 3) ---
-    // useEffect ka istemaal karein taake jab 'user' load ho, form update ho jaye
     useEffect(() => {
-        // 'enableReinitialize' (jo parent mein set hai) 
-        // ki wajah se initialValues update honay par Formik auto-update ho jayega.
-        // Lekin hum yahan manually bhi kar saktay hain (zyada safe hai).
         if (user) {
             formik.setValues((values) => ({
-                ...values, // Puranay values (like streetAddress) ko barqarar rakhein
-                fullName: user.name || '', // Store se fullName set karein
-                email: user.email || '',       // Store se email set karein
+                ...values, 
+                fullName: user.name || '', 
+                email: user.email || '', 
             }));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

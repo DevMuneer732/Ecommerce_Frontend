@@ -1,9 +1,16 @@
 import { api } from './api';
-import { CheckoutPageValues } from '../pages/checkOut'; 
-import { CartItem } from '../store/useCartStore'; 
+import { CheckoutPageValues } from '../pages/checkOut';
+import { CartItem } from '../store/useCartStore';
+
+interface BackendShippingInfo {
+    fullname: string;
+    address: string;
+    phone: string;
+    email?: string;
+}
 
 interface PlaceOrderPayload {
-    shippingInfo: CheckoutPageValues;
+    shippingInfo: BackendShippingInfo;
     items?: {
         productId: string;
         variantId: string;
@@ -11,13 +18,19 @@ interface PlaceOrderPayload {
     }[];
     couponCode?: string | null;
 }
+const placeOrder = async (shippingInfo: CheckoutPageValues, itemsToSubmit: CartItem[], couponCode: string | null, isBuyNowFlow: boolean) => {
 
-
-const placeOrder = async (shippingInfo: CheckoutPageValues,itemsToSubmit: CartItem[],couponCode: string | null,isBuyNowFlow: boolean) => {
+    const backendShippingInfo = {
+        fullname: shippingInfo.fullName,
+        address: shippingInfo.streetAddress,
+        phone: shippingInfo.phone,
+        email: shippingInfo.email
+    };
 
     const payload: PlaceOrderPayload = {
-        shippingInfo,
+        shippingInfo: backendShippingInfo,
         couponCode: couponCode || undefined,
+        items: undefined as any
     };
 
     if (isBuyNowFlow) {
@@ -27,10 +40,25 @@ const placeOrder = async (shippingInfo: CheckoutPageValues,itemsToSubmit: CartIt
             quantity: item.quantity,
         }));
     }
-    const response = await api.post('/order', payload);
-    return response.data; 
+    const response = await api.post('/orders', payload);
+    return response.data;
 };
 
+const getMyOrders = async (page: number = 1) => {
+    const response = await api.get('/orders', {
+        params: {
+            page,
+        },
+    });
+    return response.data;
+}
+
+const getOrderById = async (orderId: string) => {
+    const response = await api.get(`/orders/${orderId}`);
+    return response.data; 
+};
 export const orderService = {
     placeOrder,
+    getMyOrders,
+    getOrderById
 };

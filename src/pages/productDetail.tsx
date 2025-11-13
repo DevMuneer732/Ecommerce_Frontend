@@ -8,12 +8,7 @@ import { useProductStore } from '../store/useProductStore';
 import { ProductDetailCard } from '../components/products/productDetailCard';
 
 export const ProductDetail: React.FC = () => {
-    // --- Get productId from URL using useParams ---
-    // The key 'productId' MUST match the parameter name in your route definition (e.g., path: '/shop/:productId')
-
     const { productId } = useParams<{ productId: string }>();
-
-    // --- Select state and actions from the Product Store ---
     const {
         selectedProduct,
         isLoading,
@@ -26,12 +21,10 @@ export const ProductDetail: React.FC = () => {
         fetchSingleProduct: state.fetchSingleProduct,
     }));
 
-    // --- Fetch data when the component mounts or productId changes ---
     useEffect(() => {
         if (productId) {
             fetchSingleProduct((productId));
         }
-        // Dependency array ensures this runs when the ID from the URL changes
     }, [productId]);
 
     // --- Render Loading State ---

@@ -23,8 +23,7 @@ export const MainLayout: React.FC = () => {
         } else {
             console.log("User is a guest.");
         }
-    }, [isLoggedIn, fetchCart, fetchWishlist]); // Yeh tab chalay ga jab user login karay ga
-
+    }, [isLoggedIn, fetchCart, fetchWishlist]); 
     return (
         <>
             <Header />

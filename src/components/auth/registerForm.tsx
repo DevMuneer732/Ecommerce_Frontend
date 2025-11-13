@@ -194,7 +194,7 @@ export const RegisterForm: React.FC = () => {
                     <button
                         type="submit"
                         disabled={isSubmitting || !formik.isValid}
-                        className="w-full mt-6 flex items-center justify-center space-x-2 py-3 bg-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                        className="w-full mt-6 flex items-center justify-center space-x-2 py-3 bg-sky-500 text-white font-semibold rounded-lg hover:bg-sky-600 transition duration-200 disabled:opacity-50"
                     >
                         {isSubmitting ? (
                             'Processing...'

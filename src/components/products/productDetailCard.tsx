@@ -3,9 +3,8 @@ import { ShoppingCart, Heart, Minus, Plus, Star, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore, CartItem } from '../../store/useCartStore'; // CartItem import karein
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { ProductReviewList } from './productReviewList';
-
-// --- Types (Corrected to match Store) ---
+import { ProductReviewList } from './productReviewList'; // Review list import karein
+import { useUserStore } from '../../store/user';
 interface Review {
     _id: string; rating: number; comment: string; date: string; reviewerName: string;
     user: { _id: string; name: string; };
@@ -23,11 +22,11 @@ interface Product {
     id: string;
     title: string;
     description: string;
-    price: number; // Default price
+    price: number;
     comparePrice?: number;
     rating: number;
     reviewCount: number;
-    stock: number; // Default stock
+    stock: number;
     imageUrls: string[];
     availableColors: string[];
     availableSizes: string[];
@@ -61,13 +60,16 @@ const DetailStarRating: React.FC<{ rating: number, reviewCount: number }> = ({ r
     );
 };
 
+// --- Main Component ---
 export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product }) => {
     const navigate = useNavigate();
     const productData = product;
+
     const [selectedVariant, setSelectedVariant] = useState<Variant>(productData.variants[0]);
     const [mainImage, setMainImage] = useState(productData.variants[0].images[0].url);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
+    const isLoggedIn = useUserStore(state => state.isLoggedIn);
 
     useEffect(() => {
         if (selectedVariant.images.length > 0) {
@@ -75,40 +77,36 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
         }
         setQuantity(1);
     }, [selectedVariant]);
+
+    // --- Derived State ---
     const currentPrice = selectedVariant.price;
     const currentStock = selectedVariant.stock;
     const currentComparePrice = selectedVariant.comparePrice;
 
-    // --- (FIX 3) 'allVariantImages' - Saari unique images jama karein (Aapki Request) ---
+    // --- 'allVariantImages' - Saari unique images jama karein ---
     const allVariantImages = useMemo(() => {
         const allImages = productData.variants.flatMap(v => v.images.map(img => img.url));
         return [...new Set(allImages)];
     }, [productData.variants]);
 
-
-    // Global State Integration
     const isWishlisted = useWishlistStore(state => state.isWishlisted(productData.id));
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
-    const { addItemToCart, setBuyNowItem, isLoading } = useCartStore(state => ({
+    const { addItemToCart, isLoading } = useCartStore(state => ({
         addItemToCart: state.addItem,
-        setBuyNowItem: state.setBuyNowItem,
         isLoading: state.isLoading,
     }));
 
     const hasDiscount = currentComparePrice && currentComparePrice > currentPrice;
     const isAvailable = currentStock > 0;
 
-    // --- (FIX 4) VARIANT HANDLERS ---
+    // --- Variant Handlers ---
     const handleColorSelect = (color: string) => {
-        // User k select kiye gaye color ka pehla available variant find karein
         const firstVariantOfColor = productData.variants.find(v => v.color === color);
         if (firstVariantOfColor) {
             setSelectedVariant(firstVariantOfColor);
         }
     };
-
     const handleSizeSelect = (size: string) => {
-        // User k select kiye gaye size aur *current color* ka exact variant find karein
         const variant = productData.variants.find(v =>
             v.color === selectedVariant.color && v.size === size
         );
@@ -116,46 +114,53 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
             setSelectedVariant(variant);
         }
     };
-
-    // Sirf woh sizes show karein jo selected color k liye available hain
     const sizesForSelectedColor = useMemo(() => {
         return productData.variants
             .filter(v => v.color === selectedVariant.color)
             .map(v => v.size)
-            .filter(Boolean); // null/undefined filter karein
+            .filter(Boolean);
     }, [selectedVariant.color, productData.variants]);
 
 
-    // --- (FIX 5) "Add to Cart" aur "Buy Now" ko naye variant data k sath update karein ---
+    // --- (FIXED) Add to Cart (API Call) ---
     const handleAddToCart = () => {
-        // Ab hum sirf IDs aur quantity bhejte hain, jaisa API ko chahiye
+        if (!isLoggedIn) {
+            navigate('/login')
+            return
+        }
         addItemToCart(
-            productData.id,      // productId (String)
-            selectedVariant._id, // variantId (String)
+            productData.id,
+            selectedVariant._id,
             quantity
         );
     };
 
     const handleBuyNow = () => {
-        // 'useCartStore' ka 'setBuyNowItem' function istemaal karein
-        const payloadData = {
-            id: productData.id,
+        if (!isLoggedIn) {
+            navigate('/login');
+            return
+        }
+        const payloadData: Omit<CartItem, '_id'> = {
+            productId: productData.id,
+            variantId: selectedVariant._id,
             title: productData.title,
             price: currentPrice,
-            selectedColor: selectedVariant.color, // <-- Color add karein
+            selectedColor: selectedVariant.color,
             selectedSize: selectedVariant.size,
             quantity: quantity,
-            imageUrl: selectedVariant.images[0].url,
+            imageUrl: selectedVariant.images[0]?.url || '',
             stock: currentStock,
         };
-
-        setBuyNowItem(payloadData);
-        navigate('/checkout', { state: setBuyNowItem });
+        navigate('/checkout', { state: { buyNowItem: payloadData } });
     };
 
     const handleImageWishlistClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!isLoggedIn) {
+            navigate('/login');
+            return;
+        }
         toggleWishlist(productData.id);
     };
 
@@ -179,7 +184,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                     <div>
                         <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-sm">
                             <img
-                                src={mainImage} // <-- Use mainImage state
+                                src={mainImage}
                                 alt={productData.title}
                                 className="w-full h-full object-cover"
                             />
@@ -191,7 +196,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 <Heart size={20} className={heartColorClass} />
                             </button>
                         </div>
-                        {/* --- (FIX 6) Thumbnail Selector ab 'allVariantImages' istemaal kar raha hai --- */}
+                        {/* Thumbnail Selector */}
                         <div className="flex space-x-3">
                             {allVariantImages.map((url, index) => (
                                 <img
@@ -199,7 +204,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                     src={url}
                                     alt={`Thumbnail ${index + 1}`}
                                     className={`w-20 h-20 object-cover rounded-lg cursor-pointer transition border-2 ${mainImage === url ? 'border-blue-600 shadow-md' : 'border-transparent hover:border-gray-300'}`}
-                                    onClick={() => setMainImage(url)} // <-- Set main image on click
+                                    onClick={() => setMainImage(url)}
                                 />
                             ))}
                         </div>
@@ -211,7 +216,6 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                         <div className="border-b pb-4">
                             <DetailStarRating rating={productData.rating} reviewCount={productData.reviewCount} />
                         </div>
-                        {/* Price & Stock Status (ab 'selectedVariant' se aa raha hai) */}
                         <div className='space-y-3'>
                             <div className="flex items-baseline space-x-3">
                                 <p className="text-4xl font-extrabold text-gray-900">
@@ -238,7 +242,6 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
 
                         {/* Options: Color & Size */}
                         <div className="flex space-x-8 border-t pt-6">
-                            {/* Color Selector */}
                             {productData.availableColors.length > 0 && (
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Color: <span className='font-normal text-gray-600'>{selectedVariant.color}</span></h3>
@@ -248,24 +251,22 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                                 key={color}
                                                 className={`w-8 h-8 rounded-full border-2 transition ${selectedVariant.color === color ? 'ring-2 ring-offset-2 ring-blue-500 border-white' : 'border-gray-300 hover:border-gray-500'}`}
                                                 style={{ backgroundColor: color.toLowerCase() }}
-                                                onClick={() => handleColorSelect(color)} // <-- Use handler
+                                                onClick={() => handleColorSelect(color)}
                                                 aria-label={color}
                                             />
                                         ))}
                                     </div>
                                 </div>
                             )}
-                            {/* Size Selector */}
                             {sizesForSelectedColor.length > 0 && (
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Size: <span className='font-normal text-gray-600'>{selectedVariant.size}</span></h3>
                                     <div className="flex space-x-2">
-                                        {/* Ab hum 'availableSizes' ki jagah 'sizesForSelectedColor' map karengay */}
                                         {sizesForSelectedColor.map((size) => (
                                             <button
                                                 key={size}
                                                 className={`px-3 py-1 text-sm rounded-lg border transition ${selectedVariant.size === size ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'}`}
-                                                onClick={() => handleSizeSelect(size)} // <-- Use handler
+                                                onClick={() => handleSizeSelect(size)}
                                                 disabled={!isAvailable}
                                             >
                                                 {size}
@@ -289,16 +290,16 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                 <span className="w-10 text-center text-lg font-semibold text-gray-900">{quantity}</span>
                                 <button
                                     className="p-3 text-gray-600 hover:bg-gray-100 rounded-r-lg transition disabled:opacity-50"
-                                    onClick={() => setQuantity(q => Math.min(currentStock, q + 1))} // <-- Use dynamic stock
+                                    onClick={() => setQuantity(q => Math.min(currentStock, q + 1))}
                                     disabled={quantity >= currentStock || !isAvailable}
                                 >
                                     <Plus size={18} />
                                 </button>
                             </div>
                             <button
-                                className="flex-1 px-6 py-3 bg-blue text-white text-lg font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none flex items-center justify-center space-x-2"
+                                className="flex-1 px-6 py-3 bg-amber-500 text-white text-lg font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:shadow-none flex items-center justify-center space-x-2"
                                 onClick={handleAddToCart}
-                                disabled={!isAvailable || isLoading} // Loading state add karein
+                                disabled={!isAvailable || isLoading}
                             >
                                 {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <ShoppingCart size={20} />}
                                 <span>Add to Cart</span>
