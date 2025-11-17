@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star } from 'lucide-react';
+import { StarIcon } from '@heroicons/react/20/solid';
 
 
 interface TestimonialCardProps {
@@ -12,10 +12,9 @@ interface TestimonialCardProps {
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
     const roundedRating = Math.round(rating);
     const stars = Array.from({ length: 5 }, (_, index) => (
-        <Star
+        <StarIcon
             key={index}
-            className={`h-5 w-5 ${index < roundedRating ? 'text-yellow-400' : 'text-gray-300'
-                }`}
+            className={`h-5 w-5 ${index < roundedRating ? 'text-amber-400' : 'text-gray-300'}`}
             aria-hidden="true"
         />
     ));

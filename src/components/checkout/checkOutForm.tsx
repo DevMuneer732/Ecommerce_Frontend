@@ -30,13 +30,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ formik }) => {
                 email: user.email || '', 
             }));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]); // Yeh effect tab chalay ga jab 'user' object load ya change hoga
+    }, [user]); 
 
     return (
-        // The <form> tag ab parent (CheckoutPage) mein hai
         <div className="space-y-5">
-            {/* Full Name Field */}
             <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name

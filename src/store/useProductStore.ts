@@ -12,7 +12,7 @@ interface Review {
         name: string;
     };
 }
-export interface Variant { 
+export interface Variant {
     _id: string;
     color: string;
     size: string;
@@ -26,7 +26,7 @@ export interface Category {
     name: string;
 }
 export interface Product {
-    id: string; // _id ko id mein daalein gay
+    id: string;
     title: string;
     description: string;
     price: number; // variant[0].price
@@ -51,7 +51,8 @@ export interface ProductFilter {
     maxPrice?: number;
     sortBy: 'relevance' | 'price_asc' | 'price_desc' | 'latest';
     inStockOnly: boolean;
-    page: number; // Pagination k liye
+    page: number; 
+    search:string
 }
 
 interface ProductState {
@@ -116,6 +117,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         sortBy: 'relevance',
         inStockOnly: false,
         page: 1,
+        search:'',
     },
     currentPage: 1,
     totalPages: 1,
@@ -124,16 +126,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
     error: null,
 
     // --- (UPDATED) fetchProducts ---
-    fetchProducts: async (filtersToFetch) => {
+    fetchProducts: async () => {
+        const { filters } = get()
         set({ isLoading: true, error: null });
-        const mergedFilters = { ...get().filters, ...filtersToFetch };
-        set({ filters: mergedFilters }); // Filters ko pehle update karein
 
         try {
-            const response = await productService.getAllProducts(mergedFilters);
+            const response = await productService.getAllProducts(filters);
             const transformedCatalog = response.products.map(transformApiProduct);
 
-            if (mergedFilters.page === 1) {
+            if (filters.page === 1) {
                 set({
                     catalog: transformedCatalog,
                     currentPage: response.currentPage,
@@ -143,7 +144,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 });
             } else {
                 set((state) => ({
-                    catalog: [...state.catalog, ...transformedCatalog], // Load More
+                    catalog: [...state.catalog, ...transformedCatalog], 
                     currentPage: response.currentPage,
                     totalPages: response.totalPages,
                     totalProducts: response.totalProducts,

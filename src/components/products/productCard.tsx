@@ -21,14 +21,12 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
     const stars = Array.from({ length: 5 }, (_, index) => (
         <StarIcon
             key={index}
-            className={`h-4 w-4 ${index < roundedRating ? 'text-amber-500' : 'text-gray-300'}`}
+            className={`h-4 w-4 ${index < roundedRating ? 'text-amber-400' : 'text-gray-300'}`}
             aria-hidden="true"
         />
     ));
     return <div className="flex items-center">{stars}</div>;
 };
-
-
 
 export const ProductCard: React.FC<ProductCardProps> = ({
     imageUrl,
@@ -46,10 +44,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const toggleWishlist = useWishlistStore(state => state.toggleWishlist);
     const isLoggedIn = useUserStore(state => state.isLoggedIn)
 
-    // --- Product Store Integration ---
-    // Action ko store se retrieve karein
-    const fetchSingleProduct = useProductStore(state => state.fetchSingleProduct);
-
     const handleWishlistClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -59,27 +53,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         }
         toggleWishlist(productId);
     };
-
-    // Jab product card par click ho
-    const handleProductClick = () => {
-        // String ID k sath fetch karein
-        fetchSingleProduct(productId);
-        console.log(`Pre-fetching details for product ID: ${productId}`);
-    };
     const heartColorClass = isWishlisted
         ? 'text-red-600 fill-red-600 hover:bg-red-50'
         : 'text-gray-400 hover:text-red-500 hover:fill-red-100'; // Not wishlisted
 
     return (
-        <div className="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] transform border border-gray-100 cursor-pointer">
+        <div className="group overflow-hidden transition-all duration-300 hover:rounded-lg  hover:scale-[1.03] transform cursor-pointer">
 
-            <div className="relative h-48 overflow-hidden bg-gray-50">
+            <div className="relative h-48 overflow-hidden">
                 {/* Click handler add karein */}
-                <Link to={`/shop/${productId}`} className='block h-full' onClick={handleProductClick}>
+                <Link to={`/shop/${productId}`} className='block h-full' >
                     <img
                         src={imageUrl}
                         alt={title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover rounded-lg  transition-transform duration-500 group-hover:scale-110 group-hover:rounded-lg"
                     />
                 </Link>
             </div>
@@ -107,9 +94,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     </div>
                 </div>
 
-                <h3 className="text-lg font-medium text-gray-800 mb-1 line-clamp-2 transition hover:text-blue-600">
-                    {/* Click handler add karein */}
-                    <Link to={`/shop/${productId}`} onClick={handleProductClick}>{title}</Link>
+                <h3 className="text-lg font-medium text-gray-800 mb-1 truncate transition hover:text-blue-600">
+                    <Link to={`/shop/${productId}`} >{title}</Link>
                 </h3>
 
                 <div className="flex justify-start items-center">

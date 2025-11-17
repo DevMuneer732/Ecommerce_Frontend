@@ -53,8 +53,8 @@ const getMyOrders = async (page: number = 1) => {
     return response.data;
 }
 
-const getOrderById = async (orderId: string) => {
-    const response = await api.get(`/orders/${orderId}`);
+const getOrderById = async (id: string) => {
+    const response = await api.get(`/orders/${id}`);
     return response.data; 
 };
 export const orderService = {

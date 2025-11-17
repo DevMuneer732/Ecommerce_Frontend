@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 // Import useParams from react-router-dom to get the ID from the URL
 import { useParams } from 'react-router-dom';
-
+import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-// Import the Product Store
 import { useProductStore } from '../store/useProductStore';
 import { ProductDetailCard } from '../components/products/productDetailCard';
 
@@ -45,9 +44,9 @@ export const ProductDetail: React.FC = () => {
                     <h1 className="text-3xl font-bold text-red-600">404: Product Not Found</h1>
                     <p className="mt-2 text-gray-600">{error || "The product you are looking for does not exist."}</p>
                     {/* Add a link back to the shop */}
-                    <a href="/shop" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <Link to="/shop" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                         Back to Shop
-                    </a>
+                    </Link>
                 </div>
             </div>
         );

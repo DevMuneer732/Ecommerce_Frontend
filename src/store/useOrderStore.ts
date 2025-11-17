@@ -3,6 +3,7 @@ import { orderService } from "../services/orderService";
 
 interface OrderItem {
     _id: string;
+    product:string;
     name: string;
     price: number;
     image: string;

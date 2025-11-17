@@ -24,21 +24,16 @@ export const useUserStore = create<TUserStore>()(
           try {
             const responseData = await authService.register(values);
             set({ user: responseData.user, isLoggedIn: false });
-
-            // --- TOAST ADDED ---
             toast.success('Registration successful! Please log in.');
-
             return responseData;
-
           } catch (error: any) {
             console.error("Registration failed:", error);
             toast.error(error.message || 'Registration failed.');
-            throw error; 
+            throw error;
           }
         },
 
         login: async (values: LoginValues) => {
-          // 1. Call the API service
           try {
             const responseData = await authService.login(values);
             set({ user: responseData.user, isLoggedIn: true });
@@ -51,13 +46,16 @@ export const useUserStore = create<TUserStore>()(
           } catch (error: any) {
             console.error("Login failed:", error);
             toast.error(error.message || 'Invalid credentials.');
-            throw error; 
+            throw error;
           }
         },
-
+        logout: () => {
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+          set({ user: null, isLoggedIn: false });
+          toast.success('Logged out successfully');
+        }
       }),
-
-      // Persist config
       {
         name: 'user-auth-settings',
         partialize: (state) => ({

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Order } from '../../store/useOrderStore'; // Store se type import karein
 import { OrderItem } from './orderItem';
-import { OrderStatusBadge } from './OrderStatusBadge';
+import { OrderStatusBadge } from '../orders/orderStatusBadge';
+import { Link } from 'react-router-dom';
 
 // Helper function
 const formatDate = (dateString: string) => {
@@ -14,7 +15,9 @@ const formatDate = (dateString: string) => {
 
 export const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <Link
+            to={`/my-orders/${order._id}`}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Card Header (Naya elegant design) */}
             <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center">
@@ -41,6 +44,6 @@ export const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
                     <OrderItem key={item._id} item={item} />
                 ))}
             </div>
-        </div>
+        </Link>
     );
 };

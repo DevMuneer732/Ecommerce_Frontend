@@ -23,7 +23,7 @@ export const TrendingProductList: React.FC = () => {
     const trendingProducts = React.useMemo(() => {
         return [...catalog]
             .sort((a, b) => b.rating - a.rating)
-            .slice(0, 4);
+            .slice(0, 10);
     }, [catalog]);
 
     if (isLoading && catalog.length === 0) {
@@ -36,7 +36,7 @@ export const TrendingProductList: React.FC = () => {
 
     return (
         <div className="container mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {trendingProducts.map((product) => (
                     <ProductCard
                         key={`trending-${product.id}`}

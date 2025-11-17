@@ -8,6 +8,7 @@ import login from '../pages/login.tsx';
 import { ForgotPassword } from '../pages/forgot-password.tsx';
 import { Shop } from '../pages/shop.tsx';
 import { ProductDetail } from '../pages/productDetail.tsx';
+import TermsAndCondition from '../pages/terms-and-conditions.tsx';
 
 
 export const publicRoutes: TRoute[] = [
@@ -61,4 +62,10 @@ export const publicRoutes: TRoute[] = [
     component: TrackOrder,
     exact: true
   },
+  {
+    name: 'TermsAndConditions',
+    path: routePaths.TermsAndConditions,
+    component: TermsAndCondition,
+    exact: true
+  }
 ];

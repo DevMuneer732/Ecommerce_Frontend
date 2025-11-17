@@ -15,9 +15,7 @@ import { CheckoutForm } from '../components/checkout/checkOutForm';
 import { CheckOutSummary } from '../components/checkout/checkOutSummary';
 import { orderService } from '../services/orderService';
 import { isAxiosError } from 'axios';
-// --- 1. Naya shadcn dialog import karein ---
 import { OrderSuccessDialog } from '../components/checkout/OrderSucessDialog';
-
 export type CheckoutPageValues = CheckoutFormValues;
 
 export const CheckOut: React.FC = () => {
@@ -96,22 +94,11 @@ export const CheckOut: React.FC = () => {
                 couponCode,
                 isBuyNowFlow
             );
-
-            console.log("--- ORDER SUCCESSFUL ---");
-
             if (!isBuyNowFlow) {
                 clearCart();
             }
-
             setIsProcessing(false);
-
-            // --- YEH HAIN CHANGES ---
-            // alert("Order placed successfully!"); // <-- Isay hatayein
-            // navigate('/');                    // <-- Isay hatayein
-
-            setIsOrderSuccess(true); // <-- Modal ko trigger karein
-            // --- END CHANGES ---
-
+            setIsOrderSuccess(true);
         } catch (error) {
             console.error("Place Order Error:", error);
             if (isAxiosError(error)) {
@@ -123,7 +110,6 @@ export const CheckOut: React.FC = () => {
         }
     };
 
-    // ... (Empty Cart Logic wesa hi rahega) ...
     if (items.length === 0 && !locationBuyNowItem && !isProcessing) {
         return (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-screen text-center">

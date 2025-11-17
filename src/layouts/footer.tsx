@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react'; // Example icons for Contact section
-
+import { Link } from 'react-router-dom';
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-white text-black mt-8 border-black border-t">
@@ -21,8 +21,8 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold text-gray-700 mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Shop All</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Collections</a></li>
+              <li><Link to="/shop" className="hover:text-gray-900 transition duration-150">Shop All</Link></li>
+              {/* <li><a href="#" className="hover:text-gray-900 transition duration-150">Collections</a></li> */}
             </ul>
           </div>
 
@@ -30,10 +30,10 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold text-gray-700 mb-4">Customer Service</h4>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Contact Us</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Terms & Conditions</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition duration-150">Track Order</a></li>
+              <li><Link to="#" className="hover:text-gray-900 transition duration-150">Contact Us</Link></li>
+              {/* <li><Link to="#" className="hover:text-gray-900 transition duration-150">Privacy Policy</Link></li> */}
+              <li><Link to="terms-and-conditions" className="hover:text-gray-900 transition duration-150">Terms & Conditions</Link></li>
+              <li><Link to="/my-orders" className="hover:text-gray-900 transition duration-150">My Orders</Link></li>
             </ul>
           </div>
 

@@ -2,6 +2,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role:string;
 }
 
 export type TUserStore = {
@@ -12,5 +13,6 @@ export type TUserStore = {
   setIsLoggedIn: (status: boolean) => void;
 
   register: (values: any) => Promise<any>;
-  login: (values: any) => Promise<any>
+  login: (values: any) => Promise<any>;
+  logout:()=>void
 };

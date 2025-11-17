@@ -6,8 +6,13 @@ import { useWishlistStore } from '../../store/useWishlistStore';
 import { ProductReviewList } from './productReviewList'; // Review list import karein
 import { useUserStore } from '../../store/user';
 interface Review {
-    _id: string; rating: number; comment: string; date: string; reviewerName: string;
+    _id: string;
+    rating: number;
+    comment: string;
+    date: string;
+    reviewerName: string;
     user: { _id: string; name: string; };
+    image?: { url: string; public_id: string };
 }
 interface Variant {
     _id: string;
@@ -249,7 +254,7 @@ export const ProductDetailCard: React.FC<ProductDetailCardProps> = ({ product })
                                         {productData.availableColors.map((color) => (
                                             <button
                                                 key={color}
-                                                className={`w-8 h-8 rounded-full border-2 transition ${selectedVariant.color === color ? 'ring-2 ring-offset-2 ring-blue-500 border-white' : 'border-gray-300 hover:border-gray-500'}`}
+                                                className={`w-12 h-8 rounded-sm border-2 transition ${selectedVariant.color === color ? 'ring-2 ring-offset-2 ring-blue-500 border-white' : 'border-gray-300 hover:border-gray-500'}`}
                                                 style={{ backgroundColor: color.toLowerCase() }}
                                                 onClick={() => handleColorSelect(color)}
                                                 aria-label={color}
